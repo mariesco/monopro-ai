@@ -1,6 +1,6 @@
 {
   "name": "monopro-ai",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Monopro is the first tool to help teams test and measure the impact of integrating AI models into their products.",
   "main": "dist/index.js",
   "keywords": [
