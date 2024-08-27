@@ -2,6 +2,7 @@
   "name": "monopro-ai",
   "version": "0.0.1",
   "description": "Monopro is the first tool to help teams test and measure the impact of integrating AI models into their products.",
+  "main": "dist/index.js",
   "keywords": [
     "ai",
     "metrics",
@@ -27,11 +28,17 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "ci": "npm run build",
-    "format": "prettier --write ."
+    "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
+    "format": "prettier --write .",
+    "check-format": "prettier --check .",
+    "check-exports": "attw --pack .",
+    "test": "vitest run",
+    "dev": "vitest"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.15.4",
     "prettier": "^3.3.3",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
   }
 }
