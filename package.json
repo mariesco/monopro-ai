@@ -1,5 +1,5 @@
 {
-  "name": "monopro-ai",
+  "name": "monopro-ai/cli",
   "version": "0.0.2",
   "description": "Monopro is the first driver for create AI-powered experiences.",
   "main": "dist/index.js",
@@ -27,15 +27,17 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
+    "build:core": "tsc -p tsconfig.core.json && node check-package.core.config.js",
+    "build:cli": "tsc -p tsconfig.cli.json && node check-package.cli.config.js",
+    "ci:core": "npm run build:core && npm run check-format && npm run check-exports && npm run test",
+    "ci:cli": "npm run build:cli && npm run check-format && npm run check-exports && npm run test",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules cjs-resolves-to-esm",
     "test": "vitest run",
     "dev": "vitest",
     "local-release": "changeset version && changeset publish",
-    "prepublishOnly": "npm run ci"
+    "prepublishOnly": "npm run ci:cli"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.4",
