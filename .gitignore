@@ -130,3 +130,8 @@ dist/
 .pnp.*
 
 drizzle_migrations/
+
+
+
+.nx/cache
+.nx/workspace-data

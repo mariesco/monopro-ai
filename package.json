@@ -11,6 +11,8 @@
     "publish": "lerna publish"
   },
   "devDependencies": {
-    "lerna": "^5.6.2"
+    "@nrwl/nx-cloud": "^19.0.0",
+    "lerna": "^5.6.2",
+    "nx": "19.6.4"
   }
 }
