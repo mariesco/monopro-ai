@@ -19,21 +19,13 @@
     /* If transpiling with TypeScript: */
     "module": "NodeNext",
     "outDir": "dist",
-    // "rootDir": "",
+    "rootDir": "",
     "sourceMap": true,
 
     /* AND if you're building for a library: */
-    "declaration": true
+    "declaration": true,
 
     /* AND if you're building for a library in a monorepo: */
-    /* "declarationMap": true */
-  },
-  "include": [
-    "drizzle.config.ts",
-    "src/core/index.ts",
-    "src/utils.ts", // TODO: Remove this
-    "src/*.test.ts",
-    "src/core/**/*",
-    "src/shared/**/*"
-  ]
+    "declarationMap": true
+  }
 }

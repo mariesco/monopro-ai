@@ -1,0 +1,54 @@
+{
+  "name": "@monopro-ai/cli",
+  "version": "0.0.1",
+  "description": "CLI for Monopro AI",
+  "main": "dist/index.js",
+  "keywords": [
+    "ai",
+    "metrics",
+    "test",
+    "measure",
+    "ml",
+    "monopro",
+    "monopro-ai",
+    "cli"
+  ],
+  "homepage": "https://github.com/mariesco/monopro-ai",
+  "bugs": {
+    "url": "https://github.com/mariesco/monopro-ai/issues"
+  },
+  "author": "Martín Riesco <martinriesco16@gmail.com> (https://github.com/mariesco)",
+  "bin": {
+    "monopro-ai": "./dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mariesco/monopro-ai.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
+    "format": "prettier --write .",
+    "check-format": "prettier --check .",
+    "check-exports": "attw --pack . --ignore-rules cjs-resolves-to-esm",
+    "test": "vitest run",
+    "dev": "vitest",
+    "local-release": "changeset version && changeset publish",
+    "prepublishOnly": "npm run ci"
+  },
+  "dependencies": {
+    "monopro-ai": "*"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.15.4",
+    "@changesets/cli": "^2.27.7",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
