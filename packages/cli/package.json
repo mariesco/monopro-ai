@@ -1,6 +1,6 @@
 {
   "name": "@monopro-ai/cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CLI for Monopro AI",
   "main": "dist/index.js",
   "keywords": [
