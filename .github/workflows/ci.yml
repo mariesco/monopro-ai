@@ -25,5 +25,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run CI
-        run: npm run ci
+      # - name: Run CI
+      #   run: npm run ci
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Run CI on NX Cloud
+        run: npx nx-cloud record -- npm run ci
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
