@@ -1,6 +1,6 @@
 {
   "name": "@monopro-ai/cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI for Monopro AI",
   "main": "dist/index.js",
   "keywords": [
@@ -19,7 +19,7 @@
   },
   "author": "Martín Riesco <martinriesco16@gmail.com> (https://github.com/mariesco)",
   "bin": {
-    "monopro-ai": "./dist/index.js"
+    "monopro-ai": "dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -50,5 +50,6 @@
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }
