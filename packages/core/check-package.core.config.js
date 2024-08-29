@@ -46,6 +46,6 @@ async function checkPackage(expectedName, expectedCiScript) {
 
 // Execute the function with specific parameters based on the environment
 const expectedName = 'monopro-ai';
-const expectedCiScript = 'npm run ci:core';
+const expectedCiScript = 'npm run ci';
 
 checkPackage(expectedName, expectedCiScript);
