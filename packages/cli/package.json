@@ -1,6 +1,6 @@
 {
   "name": "@monopro-ai/cli",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "CLI for Monopro AI",
   "main": "dist/index.js",
   "keywords": [
@@ -31,7 +31,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run format",
     "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
