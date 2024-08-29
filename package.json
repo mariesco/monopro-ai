@@ -1,5 +1,5 @@
 {
-  "name": "monopro-ai/cli",
+  "name": "monopro-ai",
   "version": "0.0.2",
   "description": "Monopro is the first driver for create AI-powered experiences.",
   "main": "dist/index.js",
@@ -37,7 +37,7 @@
     "test": "vitest run",
     "dev": "vitest",
     "local-release": "changeset version && changeset publish",
-    "prepublishOnly": "npm run ci:cli"
+    "prepublishOnly": "npm run ci:core"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.4",
