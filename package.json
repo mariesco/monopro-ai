@@ -1,54 +1,16 @@
 {
-  "name": "monopro-ai",
-  "version": "0.0.2",
-  "description": "Monopro is the first driver for create AI-powered experiences.",
-  "main": "dist/index.js",
-  "keywords": [
-    "ai",
-    "metrics",
-    "test",
-    "measure",
-    "ml",
-    "monopro",
-    "monopro-ai"
+  "name": "monopro-ai-monorepo",
+  "workspaces": [
+    "packages/*"
   ],
-  "homepage": "https://github.com/mariesco/monopro-ai",
-  "bugs": {
-    "url": "https://github.com/mariesco/monopro-ai/issues"
-  },
-  "author": "Martín Riesco <martinriesco16@gmail.com> (https://github.com/mariesco)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mariesco/monopro-ai.git"
-  },
-  "files": [
-    "dist"
-  ],
-  "license": "MIT",
-  "type": "module",
   "scripts": {
-    "build": "tsc",
-    "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
-    "format": "prettier --write .",
-    "check-format": "prettier --check .",
-    "check-exports": "attw --pack . --ignore-rules cjs-resolves-to-esm",
-    "test": "vitest run",
-    "dev": "vitest",
-    "local-release": "changeset version && changeset publish",
-    "prepublishOnly": "npm run ci"
+    "build": "lerna run build",
+    "ci": "lerna run ci",
+    "test": "lerna run test",
+    "lint": "lerna run lint",
+    "publish": "lerna publish"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.15.4",
-    "@changesets/cli": "^2.27.7",
-    "drizzle-kit": "^0.24.2",
-    "prettier": "^3.3.3",
-    "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
-  },
-  "dependencies": {
-    "@neondatabase/serverless": "^0.9.4",
-    "drizzle-orm": "^0.33.0",
-    "drizzle-zod": "^0.5.1",
-    "zod": "^3.23.8"
+    "lerna": "^5.6.2"
   }
 }
