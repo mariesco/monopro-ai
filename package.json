@@ -1,7 +1,7 @@
 {
   "name": "monopro-ai",
   "version": "0.0.2",
-  "description": "Monopro is the first tool to help teams test and measure the impact of integrating AI models into their products.",
+  "description": "Monopro is the first driver for create AI-powered experiences.",
   "main": "dist/index.js",
   "keywords": [
     "ai",
@@ -40,12 +40,15 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.27.7",
+    "drizzle-kit": "^0.24.2",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.4",
+    "drizzle-orm": "^0.33.0",
+    "drizzle-zod": "^0.5.1",
     "zod": "^3.23.8"
   }
 }
