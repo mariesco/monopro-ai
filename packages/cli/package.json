@@ -19,7 +19,7 @@
   },
   "author": "Martín Riesco <martinriesco16@gmail.com> (https://github.com/mariesco)",
   "bin": {
-    "monopro-ai": "dist/index.js"
+    "monopro": "./bin/run.js"
   },
   "repository": {
     "type": "git",
@@ -42,14 +42,24 @@
     "prepublishOnly": "npm run ci"
   },
   "dependencies": {
+    "@inquirer/prompts": "^5.3.8",
+    "@oclif/core": "^4.0.19",
     "monopro-ai": "*"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.27.7",
+    "@types/node": "^18.19.47",
     "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "oclif": {
+    "bin": "monopro",
+    "commands": "./dist/src/commands",
+    "dirname": "monopro",
+    "topicSeparator": " "
+  }
 }
