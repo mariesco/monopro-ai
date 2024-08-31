@@ -1,22 +1,12 @@
 import { select, input, Separator } from '@inquirer/prompts';
 import { colorize } from './colors.js';
+import { FeatureService } from 'monopro-ai';
 
-export async function listFeatures(command: any) {
-  // Simulación de obtención de datos
-  const features = [
-    {
-      name: 'Feature 1',
-      id: 'f1',
-      description: 'Description 1',
-      model: 'Model A',
-    },
-    {
-      name: 'Feature 2',
-      id: 'f2',
-      description: 'Description 2',
-      model: 'Model B',
-    },
-  ];
+export async function listFeatures(
+  command: any,
+  featureService: FeatureService,
+) {
+  const features = await featureService.getFeatures();
 
   const selectedFeature = await select({
     message: colorize('Select a feature to view details:', 'yellow'),
@@ -70,21 +60,22 @@ export async function listFeatures(command: any) {
       ],
     });
 
-    await handleFeatureAction(command, nextAction, feature.id);
+    await handleFeatureAction(command, nextAction, feature.id, featureService);
   }
 }
 
 export async function handleFeatureAction(
   command: any,
   action: string,
-  featureId: string,
+  featureId: number,
+  featureService: FeatureService,
 ) {
   switch (action) {
     case 'viewUseCases':
-      await viewUseCases(command, featureId);
+      await viewUseCases(command, featureId, featureService);
       break;
     case 'viewResponseClasses':
-      await viewResponseClasses(command, featureId);
+      await viewResponseClasses(command, featureId, featureService);
       break;
     case 'createUseCase':
       await createUseCase(command, featureId);
@@ -93,7 +84,7 @@ export async function handleFeatureAction(
       await createResponseClass(command, featureId);
       break;
     case 'backToFeatures':
-      await listFeatures(command);
+      await listFeatures(command, featureService);
       break;
     case 'backToHome':
       command.run();
@@ -101,7 +92,11 @@ export async function handleFeatureAction(
   }
 }
 
-async function viewUseCases(command: any, featureId: string) {
+async function viewUseCases(
+  command: any,
+  featureId: number,
+  featureService: FeatureService,
+) {
   // Simulación de obtención de casos de uso
   const useCases = [
     { name: 'Use Case 1', id: 'uc1' },
@@ -160,7 +155,7 @@ async function viewUseCases(command: any, featureId: string) {
         // Implementar la lógica de eliminación
         break;
       case 'backToFeatureMenu':
-        await listFeatures(command);
+        await listFeatures(command, featureService);
         break;
       case 'backToHome':
         command.run();
@@ -169,7 +164,11 @@ async function viewUseCases(command: any, featureId: string) {
   }
 }
 
-async function viewResponseClasses(command: any, featureId: string) {
+async function viewResponseClasses(
+  command: any,
+  featureId: number,
+  featureService: FeatureService,
+) {
   // Simulación de obtención de clases de respuesta
   const responseClasses = [
     { name: 'Response Class 1', id: 'rc1' },
@@ -237,7 +236,7 @@ async function viewResponseClasses(command: any, featureId: string) {
         // Implementar la lógica de eliminación
         break;
       case 'backToFeatureMenu':
-        await listFeatures(command);
+        await listFeatures(command, featureService);
         break;
       case 'backToHome':
         command.run();
@@ -246,7 +245,7 @@ async function viewResponseClasses(command: any, featureId: string) {
   }
 }
 
-async function createUseCase(command: any, featureId: string) {
+async function createUseCase(command: any, featureId: number) {
   const useCaseName = await input({
     message: colorize(
       `Enter the name of the new use case for feature ${featureId}:`,
@@ -259,7 +258,7 @@ async function createUseCase(command: any, featureId: string) {
   // await saveUseCase(featureId, useCaseName);
 }
 
-async function createResponseClass(command: any, featureId: string) {
+async function createResponseClass(command: any, featureId: number) {
   const responseClassName = await input({
     message: colorize(
       `Enter the name of the new response class for feature ${featureId}:`,

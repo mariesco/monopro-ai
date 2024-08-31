@@ -44,6 +44,7 @@
   "dependencies": {
     "@inquirer/prompts": "^5.3.8",
     "@oclif/core": "^4.0.19",
+    "dotenv": "^16.4.5",
     "monopro-ai": "*"
   },
   "devDependencies": {

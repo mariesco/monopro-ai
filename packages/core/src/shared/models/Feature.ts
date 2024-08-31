@@ -1,12 +1,9 @@
 import { z } from 'zod';
+import { FeatureTable } from './drizzle_schema.js';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
-export const FeatureSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  purpose: z.string(),
-  model: z.string(),
-  expectedClasses: z.array(z.string()),
-  createdAt: z.date().default(new Date()),
-});
+export const insertFeatureSchema = createInsertSchema(FeatureTable);
+export const selectFeatureSchema = createSelectSchema(FeatureTable);
 
-export type Feature = z.infer<typeof FeatureSchema>;
+export type InsertFeature = z.infer<typeof insertFeatureSchema>;
+export type SelectFeature = z.infer<typeof selectFeatureSchema>;

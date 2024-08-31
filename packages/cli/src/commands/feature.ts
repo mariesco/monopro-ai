@@ -1,7 +1,12 @@
-import { Command, Flags, Args } from '@oclif/core';
+import { Flags, Args } from '@oclif/core';
 import { input, select } from '@inquirer/prompts';
+import { FeatureService } from 'monopro-ai';
 
-export default class FeatureCommand extends Command {
+import { colorize } from '../utils/colors.js';
+import BaseCommand from '../utils/base-command.js';
+
+export default class FeatureCommand extends BaseCommand {
+  private featureService!: FeatureService;
   static override description = 'Manage features in MonoPro';
 
   static override flags = {
@@ -29,6 +34,7 @@ export default class FeatureCommand extends Command {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(FeatureCommand);
+    this.featureService = await this.initializeService(FeatureService);
 
     if (args.action === 'create' || !args.action) {
       const name =
@@ -47,16 +53,16 @@ export default class FeatureCommand extends Command {
       this.log(`Description: ${description}`);
       this.log(`Selected model: ${model}`);
 
-      // await saveFeature({ name, description, model });
+      await this.featureService.createFeature({ name, description, model });
 
       this.log('\x1b[32m%s\x1b[0m', 'Feature saved successfully!');
     } else if (args.action === 'list') {
       await this.listFeatures();
     } else if (args.action === 'view') {
-      const featureId = flags.name || (await this.selectFeature());
+      const featureId = await this.selectFeature();
       await this.viewFeature(featureId);
     } else if (args.action === 'delete') {
-      const featureId = flags.name || (await this.selectFeature());
+      const featureId = await this.selectFeature();
       await this.deleteFeature(featureId);
     } else {
       this.log('No action provided.');
@@ -64,26 +70,37 @@ export default class FeatureCommand extends Command {
   }
 
   private async listFeatures() {
-    const features = ['Feature A', 'Feature B', 'Feature C'];
-    this.log('Listing features:');
-    features.forEach((feature) => this.log(feature));
+    const features = await this.featureService.getFeatures();
+    features.forEach((feature) => this.log(feature.name));
   }
 
   private async selectFeature() {
-    const features = ['Feature A', 'Feature B', 'Feature C'];
+    // const features = ['Feature A', 'Feature B', 'Feature C'];
+    const features = await this.featureService.getFeatures();
     return await select({
       message: 'Select a feature:',
-      choices: features.map((feature) => ({ name: feature, value: feature })),
+      choices: features.map((feature) => ({
+        name: feature.name,
+        value: feature.id,
+      })),
     });
   }
 
-  private async viewFeature(featureId: string) {
+  private async viewFeature(featureId: number) {
     this.log(`Viewing details for feature: ${featureId}`);
-    this.log('Feature details...');
+    this.log('Feature details ==>');
+    // TODO: Implement view feature
+    const feature = await this.featureService.getFeatureById(featureId);
+    if (feature) {
+      this.log(`${colorize('Name', 'green')}: ${feature.name}`);
+      this.log(`${colorize('Description', 'green')}: ${feature.description}`);
+      this.log(`${colorize('Model', 'green')}: ${feature.model}`);
+    }
   }
 
-  private async deleteFeature(featureId: string) {
+  private async deleteFeature(featureId: number) {
     this.log(`Deleting feature: ${featureId}`);
+    await this.featureService.deleteFeature(featureId);
     this.log('Feature deleted.');
   }
 }
