@@ -75,7 +75,6 @@ export default class FeatureCommand extends BaseCommand {
   }
 
   private async selectFeature() {
-    // const features = ['Feature A', 'Feature B', 'Feature C'];
     const features = await this.featureService.getFeatures();
     return await select({
       message: 'Select a feature:',
@@ -92,6 +91,7 @@ export default class FeatureCommand extends BaseCommand {
     // TODO: Implement view feature
     const feature = await this.featureService.getFeatureById(featureId);
     if (feature) {
+      this.log(`${colorize('ID', 'green')}: ${feature.id}`);
       this.log(`${colorize('Name', 'green')}: ${feature.name}`);
       this.log(`${colorize('Description', 'green')}: ${feature.description}`);
       this.log(`${colorize('Model', 'green')}: ${feature.model}`);

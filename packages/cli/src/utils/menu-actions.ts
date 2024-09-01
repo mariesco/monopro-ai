@@ -1,11 +1,15 @@
 import { select, input, Separator } from '@inquirer/prompts';
 import { colorize } from './colors.js';
-import { FeatureService } from 'monopro-ai';
+import { FeatureService, ResponseClassService } from 'monopro-ai';
 
 export async function listFeatures(
   command: any,
-  featureService: FeatureService,
+  services: {
+    featureService: FeatureService;
+    responseClassService: ResponseClassService;
+  },
 ) {
+  const { featureService, responseClassService } = services;
   const features = await featureService.getFeatures();
 
   const selectedFeature = await select({
@@ -60,7 +64,10 @@ export async function listFeatures(
       ],
     });
 
-    await handleFeatureAction(command, nextAction, feature.id, featureService);
+    await handleFeatureAction(command, nextAction, feature.id, {
+      featureService,
+      responseClassService,
+    });
   }
 }
 
@@ -68,23 +75,30 @@ export async function handleFeatureAction(
   command: any,
   action: string,
   featureId: number,
-  featureService: FeatureService,
+  services: {
+    featureService: FeatureService;
+    responseClassService: ResponseClassService;
+  },
 ) {
   switch (action) {
     case 'viewUseCases':
-      await viewUseCases(command, featureId, featureService);
+      await viewUseCases(command, featureId, services);
       break;
     case 'viewResponseClasses':
-      await viewResponseClasses(command, featureId, featureService);
+      await viewResponseClasses(command, featureId, services);
       break;
     case 'createUseCase':
       await createUseCase(command, featureId);
       break;
     case 'createResponseClass':
-      await createResponseClass(command, featureId);
+      await createResponseClass(
+        command,
+        featureId,
+        services.responseClassService,
+      );
       break;
     case 'backToFeatures':
-      await listFeatures(command, featureService);
+      await listFeatures(command, services);
       break;
     case 'backToHome':
       command.run();
@@ -95,7 +109,10 @@ export async function handleFeatureAction(
 async function viewUseCases(
   command: any,
   featureId: number,
-  featureService: FeatureService,
+  services: {
+    featureService: FeatureService;
+    responseClassService: ResponseClassService;
+  },
 ) {
   // Simulación de obtención de casos de uso
   const useCases = [
@@ -155,7 +172,7 @@ async function viewUseCases(
         // Implementar la lógica de eliminación
         break;
       case 'backToFeatureMenu':
-        await listFeatures(command, featureService);
+        await listFeatures(command, services);
         break;
       case 'backToHome':
         command.run();
@@ -167,14 +184,20 @@ async function viewUseCases(
 async function viewResponseClasses(
   command: any,
   featureId: number,
-  featureService: FeatureService,
+  services: {
+    featureService: FeatureService;
+    responseClassService: ResponseClassService;
+  },
 ) {
-  // Simulación de obtención de clases de respuesta
-  const responseClasses = [
-    { name: 'Response Class 1', id: 'rc1' },
-    { name: 'Response Class 2', id: 'rc2' },
-  ];
+  const responseClasses =
+    await services.responseClassService.getResponseClassesByFeatureId(
+      featureId,
+    );
 
+  if (responseClasses.length === 0) {
+    command.log(colorize('No response classes found for this feature.', 'red'));
+    return;
+  }
   const selectedResponseClass = await select({
     message: colorize(
       `Select a response class to view for feature ${featureId}:`,
@@ -190,7 +213,7 @@ async function viewResponseClasses(
   if (responseClass) {
     command.log(
       colorize(
-        `\nResponse Class Details:\nName: ${responseClass.name}`,
+        `\nResponse Class Details:\nName: ${responseClass.name}\nDescription: ${responseClass.description}\nFeature ID: ${responseClass.featureId}`,
         'green',
       ),
     );
@@ -224,19 +247,39 @@ async function viewResponseClasses(
 
     switch (action) {
       case 'editResponseClass':
-        command.log(
-          colorize(`Editing Response Class: ${responseClass.name}`, 'yellow'),
+        const responseClassNewName = await input({
+          message: colorize(
+            `Enter the new name for response class ${responseClass.name}:`,
+            'yellow',
+          ),
+        });
+        const responseClassNewDescription = await input({
+          message: colorize(
+            `Enter the new description for response class ${responseClass.name}:`,
+            'yellow',
+          ),
+        });
+
+        await services.responseClassService.updateResponseClass(
+          responseClass.id,
+          {
+            name: responseClassNewName,
+            description: responseClassNewDescription,
+            featureId: responseClass.featureId,
+          },
         );
-        // Implementar la lógica de edición
         break;
       case 'deleteResponseClass':
         command.log(
           colorize(`Deleting Response Class: ${responseClass.name}`, 'red'),
         );
-        // Implementar la lógica de eliminación
+        await services.responseClassService.deleteResponseClass(
+          responseClass.id,
+        );
+
         break;
       case 'backToFeatureMenu':
-        await listFeatures(command, featureService);
+        await listFeatures(command, services);
         break;
       case 'backToHome':
         command.run();
@@ -258,10 +301,20 @@ async function createUseCase(command: any, featureId: number) {
   // await saveUseCase(featureId, useCaseName);
 }
 
-async function createResponseClass(command: any, featureId: number) {
+async function createResponseClass(
+  command: any,
+  featureId: number,
+  responseClassService: ResponseClassService,
+) {
   const responseClassName = await input({
     message: colorize(
       `Enter the name of the new response class for feature ${featureId}:`,
+      'yellow',
+    ),
+  });
+  const responseClassDescription = await input({
+    message: colorize(
+      `Enter the description of the new response class for feature ${featureId}:`,
       'yellow',
     ),
   });
@@ -269,6 +322,17 @@ async function createResponseClass(command: any, featureId: number) {
   command.log(
     colorize(`Creating Response Class: ${responseClassName}`, 'green'),
   );
-  // Simulación de creación de clase de respuesta
-  // await saveResponseClass(featureId, responseClassName);
+
+  const responseClass = await responseClassService.createResponseClass({
+    name: responseClassName,
+    description: responseClassDescription,
+    featureId: featureId,
+  });
+
+  command.log(
+    colorize(
+      `\nResponse Class Details:\nName: ${responseClass.name}\nDescription: ${responseClass.description}\nFeature ID: ${responseClass.featureId}`,
+      'green',
+    ),
+  );
 }

@@ -1,4 +1,12 @@
-import { pgTable, varchar, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  varchar,
+  serial,
+  text,
+  integer,
+  timestamp,
+  type AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 
 export const AIStringTable = pgTable('ai_strings', {
   id: serial('id').primaryKey(),
@@ -27,3 +35,22 @@ export const FeatureTable = pgTable('features', {
   model: varchar('model', { length: 255 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+export const ResponseClassTable = pgTable('response_classes', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  featureId: integer('feature_id')
+    .notNull()
+    .references((): AnyPgColumn => FeatureTable.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// export const UseCaseTable = pgTable('use_cases', {
+//   id: serial('id').primaryKey(),
+//   name: varchar('name', { length: 255 }).notNull(),
+//   description: text('description').notNull(),
+//   featureId: integer('feature_id').notNull().references((): AnyPgColumn => FeatureTable.id),
+//   responseClassExpectedId: integer('response_class_expected_id').notNull().references((): AnyPgColumn => ResponseClassTable.id),
+//   createdAt: timestamp('created_at').notNull().defaultNow(),
+// });

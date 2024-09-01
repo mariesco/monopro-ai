@@ -40,7 +40,6 @@ export class FeatureService {
 
   async getFeatures(): Promise<SelectFeature[]> {
     const features = await this.db.select().from(FeatureTable);
-    //TODO: Add validation with zod
     return features.map((f) => selectFeatureSchema.parse(f));
     // return features;
   }
