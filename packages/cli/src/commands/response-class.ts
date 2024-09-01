@@ -18,7 +18,10 @@ export default class ResponseClassCommand extends BaseCommand {
       char: 'd',
       description: 'Response class description',
     }),
-    id: Flags.string({ char: 'i', description: 'Response class ID who want to edit or delete' }),
+    id: Flags.string({
+      char: 'i',
+      description: 'Response class ID who want to edit or delete',
+    }),
     help: Flags.help({ char: 'h', description: 'Show help for the command' }),
   };
 
@@ -61,7 +64,10 @@ export default class ResponseClassCommand extends BaseCommand {
       if (!flags.id) {
         responseClassSelected = await this.selectResponseClass(featureId);
       } else {
-        responseClassSelected = await this.responseClassService.getResponseClassById(Number(flags.id));
+        responseClassSelected =
+          await this.responseClassService.getResponseClassById(
+            Number(flags.id),
+          );
 
         if (!responseClassSelected) {
           this.log(colorize('No response class found with this ID.', 'red'));
@@ -69,35 +75,56 @@ export default class ResponseClassCommand extends BaseCommand {
         }
       }
 
-      const newResponseClassName = flags.name || (await input({
-        message: `Enter new name for response class ${responseClassSelected.name}:`,
-      }));
-      const newResponseClassDescription = flags.description || (await input({
-        message: `Enter new description for response class ${responseClassSelected.description}:`,
-      }));
+      const newResponseClassName =
+        flags.name ||
+        (await input({
+          message: `Enter new name for response class ${responseClassSelected.name}:`,
+        }));
+      const newResponseClassDescription =
+        flags.description ||
+        (await input({
+          message: `Enter new description for response class ${responseClassSelected.description}:`,
+        }));
 
-      await this.responseClassService.updateResponseClass(responseClassSelected.id, {
-        name: newResponseClassName,
-        description: newResponseClassDescription,
-        featureId: featureId,
-      });
+      await this.responseClassService.updateResponseClass(
+        responseClassSelected.id,
+        {
+          name: newResponseClassName,
+          description: newResponseClassDescription,
+          featureId: featureId,
+        },
+      );
 
-      this.log(colorize(`Successfully updated response class ${responseClassSelected.name}`, 'green'));
-
+      this.log(
+        colorize(
+          `Successfully updated response class ${responseClassSelected.name}`,
+          'green',
+        ),
+      );
     } else if (args.action === 'delete') {
       let responseClassSelected;
-      if(!flags.id) {
+      if (!flags.id) {
         const featureId = Number(flags.feature || (await this.selectFeature()));
         responseClassSelected = await this.selectResponseClass(featureId);
       } else {
-        responseClassSelected = await this.responseClassService.getResponseClassById(Number(flags.id));
+        responseClassSelected =
+          await this.responseClassService.getResponseClassById(
+            Number(flags.id),
+          );
         if (!responseClassSelected) {
           this.log(colorize('No response class found with this ID.', 'red'));
           return;
         }
       }
-      await this.responseClassService.deleteResponseClass(responseClassSelected.id);
-      this.log(colorize(`Successfully deleted response class ${responseClassSelected.name}`, 'green'));
+      await this.responseClassService.deleteResponseClass(
+        responseClassSelected.id,
+      );
+      this.log(
+        colorize(
+          `Successfully deleted response class ${responseClassSelected.name}`,
+          'green',
+        ),
+      );
     } else {
       this.log('No action provided.');
     }
@@ -120,10 +147,11 @@ export default class ResponseClassCommand extends BaseCommand {
     if (responseClass) {
       this.log(`${colorize('ID', 'green')}: ${responseClass.id}`);
       this.log(`${colorize('Name', 'green')}: ${responseClass.name}`);
-      this.log(`${colorize('Description', 'green')}: ${responseClass.description}`);
+      this.log(
+        `${colorize('Description', 'green')}: ${responseClass.description}`,
+      );
       this.log(`${colorize('Model', 'green')}: ${responseClass.featureId}`);
     }
-
   }
 
   private async selectResponseClass(featureId: number) {

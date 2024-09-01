@@ -3,6 +3,7 @@ import {
   varchar,
   serial,
   text,
+  json,
   integer,
   timestamp,
   type AnyPgColumn,
@@ -16,15 +17,19 @@ export const AIStringTable = pgTable('ai_strings', {
 
 export const AIPromptTable = pgTable('ai_prompts', {
   id: serial('id').primaryKey(),
-  stringsIds: text('strings_ids').notNull(),
-  featureId: text('feature_id').notNull(),
+  stringsIds: json('strings_ids').$type<number[]>().default([]).notNull(),
+  featureId: integer('feature_id')
+    .notNull()
+    .references((): AnyPgColumn => FeatureTable.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 export const AIResponseTable = pgTable('ai_responses', {
   id: serial('id').primaryKey(),
-  stringsIds: text('strings_ids').notNull(),
-  promptId: text('prompt_id').notNull(),
+  stringsIds: json('strings_ids').$type<number[]>().default([]).notNull(),
+  promptId: integer('prompt_id')
+    .notNull()
+    .references((): AnyPgColumn => AIPromptTable.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
