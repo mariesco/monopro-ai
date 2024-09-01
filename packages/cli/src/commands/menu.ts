@@ -1,12 +1,17 @@
 import { select, Separator } from '@inquirer/prompts';
 import { colorize } from '../utils/colors.js';
-import { listFeatures, handleFeatureAction } from '../utils/menu-actions.js';
+import { listFeatures } from '../utils/menu-actions.js';
 import BaseCommand from '../utils/base-command.js';
-import { FeatureService, ResponseClassService } from 'monopro-ai';
+import {
+  AIModelService,
+  FeatureService,
+  ResponseClassService,
+} from 'monopro-ai';
 
 export default class Menu extends BaseCommand {
   private featureService!: FeatureService;
   private responseClassService!: ResponseClassService;
+  private aiModelService!: AIModelService;
 
   static override description = 'Main menu for MonoPro CLI';
 
@@ -15,6 +20,7 @@ export default class Menu extends BaseCommand {
     this.featureService = await this.initializeService(FeatureService);
     this.responseClassService =
       await this.initializeService(ResponseClassService);
+    this.aiModelService = await this.initializeService(AIModelService);
 
     const action = await select({
       message: colorize('What would you like to do?', 'yellow'),
@@ -42,6 +48,7 @@ export default class Menu extends BaseCommand {
         await listFeatures(this, {
           featureService: this.featureService,
           responseClassService: this.responseClassService,
+          aiModelService: this.aiModelService,
         });
         break;
       case 'exit':

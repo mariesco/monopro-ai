@@ -18,13 +18,11 @@ export default abstract class BaseCommand extends Command {
         for (const key in envConfig) {
           process.env[key] = envConfig[key];
         }
-
-        this.log('-----Variables de entorno cargadas correctamente');
       } else {
-        this.warn('Archivo .env no encontrado');
+        this.warn('File .env not found');
       }
-    } catch (error: any) {
-      this.error(`Error al cargar el archivo .env: ${error.message}`);
+    } catch (error) {
+      this.error(`Error on load file .env: ${error}`);
     }
   }
 
@@ -38,13 +36,10 @@ export default abstract class BaseCommand extends Command {
       };
 
       if (!Service) {
-        throw new Error(
-          `No se pudo encontrar el servicio ${ServiceClass.name} en el m�dulo.`,
-        );
+        throw new Error(`Not found service ${ServiceClass.name} in module.`);
       }
 
       const serviceInstance = new Service(process.env.NEON_URL!);
-      this.log(`${ServiceClass.name} inicializado correctamente.`);
       return serviceInstance;
     } catch (error) {
       throw error;

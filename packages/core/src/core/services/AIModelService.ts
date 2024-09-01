@@ -1,5 +1,8 @@
 import { eq, inArray } from 'drizzle-orm';
-import type { SelectAIPrompt } from '../../shared/models/AIModel.js';
+import {
+  selectAIPromptSchema,
+  type SelectAIPrompt,
+} from '../../shared/models/AIModel.js';
 import {
   AIPromptTable,
   AIStringTable,
@@ -78,5 +81,39 @@ export class AIModelService {
     const stringMap = new Map(strings.map((s) => [s.id, s.content]));
 
     return prompt.stringsIds.map((id) => stringMap.get(id)).join('');
+  }
+
+  async getPromptsByFeatureId(
+    featureId: number,
+  ): Promise<{ id: number; content: string; featureId: number }[]> {
+    const prompts = await this.db
+      .select()
+      .from(AIPromptTable)
+      .where(eq(AIPromptTable.featureId, featureId));
+
+    if (!prompts.length) {
+      return [];
+    }
+
+    const allStringIds = prompts.flatMap((prompt) => prompt.stringsIds);
+
+    if (!allStringIds.length) {
+      return [];
+    }
+
+    const strings = await this.db
+      .select()
+      .from(AIStringTable)
+      .where(inArray(AIStringTable.id, allStringIds));
+
+    const stringMap = new Map(strings.map((s) => [s.id, s.content]));
+
+    const result = prompts.map((prompt) => ({
+      id: prompt.id,
+      content: prompt.stringsIds.map((id) => stringMap.get(id)).join(''),
+      featureId: prompt.featureId,
+    }));
+
+    return result;
   }
 }

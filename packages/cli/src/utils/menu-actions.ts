@@ -1,15 +1,20 @@
 import { select, input, Separator } from '@inquirer/prompts';
 import { colorize } from './colors.js';
-import { FeatureService, ResponseClassService } from 'monopro-ai';
+import {
+  AIModelService,
+  FeatureService,
+  ResponseClassService,
+} from 'monopro-ai';
 
 export async function listFeatures(
   command: any,
   services: {
     featureService: FeatureService;
     responseClassService: ResponseClassService;
+    aiModelService: AIModelService;
   },
 ) {
-  const { featureService, responseClassService } = services;
+  const { featureService, responseClassService, aiModelService } = services;
   const features = await featureService.getFeatures();
 
   const selectedFeature = await select({
@@ -31,9 +36,9 @@ export async function listFeatures(
       message: colorize('What would you like to do?', 'yellow'),
       choices: [
         {
-          name: 'View Use Cases',
-          value: 'viewUseCases',
-          description: 'View and manage use cases for this feature',
+          name: 'View Prompts',
+          value: 'viewPrompts',
+          description: 'View and manage testing prompts for this feature',
         },
         {
           name: 'View Response Classes',
@@ -41,14 +46,25 @@ export async function listFeatures(
           description: 'View and manage response classes for this feature',
         },
         {
-          name: 'Create a Use Case',
-          value: 'createUseCase',
-          description: 'Create a new use case for this feature',
+          name: 'View Use Cases',
+          value: 'viewUseCases',
+          description: 'View and manage use cases for this feature',
+        },
+        new Separator(),
+        {
+          name: 'Create a Prompt',
+          value: 'createPrompt',
+          description: 'Create a new testing prompt for this feature',
         },
         {
           name: 'Create a Response Class',
           value: 'createResponseClass',
           description: 'Create a new response class for this feature',
+        },
+        {
+          name: 'Create a Use Case',
+          value: 'createUseCase',
+          description: 'Create a new use case for this feature',
         },
         new Separator(),
         {
@@ -67,6 +83,7 @@ export async function listFeatures(
     await handleFeatureAction(command, nextAction, feature.id, {
       featureService,
       responseClassService,
+      aiModelService,
     });
   }
 }
@@ -78,17 +95,21 @@ export async function handleFeatureAction(
   services: {
     featureService: FeatureService;
     responseClassService: ResponseClassService;
+    aiModelService: AIModelService;
   },
 ) {
   switch (action) {
-    case 'viewUseCases':
-      await viewUseCases(command, featureId, services);
+    case 'viewPrompts':
+      await viewPrompts(command, featureId, services);
       break;
     case 'viewResponseClasses':
       await viewResponseClasses(command, featureId, services);
       break;
-    case 'createUseCase':
-      await createUseCase(command, featureId);
+    case 'viewUseCases':
+      await viewUseCases(command, featureId, services);
+      break;
+    case 'createPrompt':
+      await createPrompt(command, featureId, services.aiModelService);
       break;
     case 'createResponseClass':
       await createResponseClass(
@@ -96,6 +117,9 @@ export async function handleFeatureAction(
         featureId,
         services.responseClassService,
       );
+      break;
+    case 'createUseCase':
+      await createUseCase(command, featureId);
       break;
     case 'backToFeatures':
       await listFeatures(command, services);
@@ -106,12 +130,91 @@ export async function handleFeatureAction(
   }
 }
 
+async function viewPrompts(
+  command: any,
+  featureId: number,
+  services: {
+    featureService: FeatureService;
+    responseClassService: ResponseClassService;
+    aiModelService: AIModelService;
+  },
+) {
+  const prompts =
+    await services.aiModelService.getPromptsByFeatureId(featureId);
+
+  if (prompts.length === 0) {
+    command.log(colorize('No prompts found for this feature.', 'red'));
+    return;
+  }
+
+  const selectedPrompt = await select({
+    message: colorize(`Select a prompt to view:`, 'yellow'),
+    choices: prompts.map((p) => ({ name: p.content, value: p.id })),
+  });
+
+  const prompt = prompts.find((p) => p.id === selectedPrompt);
+
+  if (prompt) {
+    command.log(
+      colorize(
+        `\nPrompt Details: \nContent: ${prompt.content}\nFeature ID: ${prompt.featureId}`,
+        'green',
+      ),
+    );
+
+    const action = await select({
+      message: colorize('What would you like to do?', 'yellow'),
+      choices: [
+        {
+          name: 'Edit Prompt',
+          value: 'editPrompt',
+          description: 'Edit this prompt',
+        },
+        {
+          name: 'Delete Prompt',
+          value: 'deletePrompt',
+          description: 'Delete this prompt',
+        },
+        new Separator(),
+        {
+          name: 'Back to Feature Menu',
+          value: 'backToFeatureMenu',
+          description: 'Return to the feature menu',
+        },
+        {
+          name: 'Back to Home',
+          value: 'backToHome',
+          description: 'Return to the main menu',
+        },
+      ],
+    });
+
+    switch (action) {
+      case 'editPrompt':
+        command.log(colorize(`Editing Prompt: ${prompt.content}`, 'yellow'));
+        // Implementar la lógica de edición
+        break;
+      case 'deletePrompt':
+        command.log(colorize(`Deleting Prompt: ${prompt.content}`, 'red'));
+        // Implementar la lógica de eliminación
+        break;
+      case 'backToFeatureMenu':
+        await listFeatures(command, services);
+        break;
+      case 'backToHome':
+        command.run();
+        break;
+    }
+  }
+}
+
 async function viewUseCases(
   command: any,
   featureId: number,
   services: {
     featureService: FeatureService;
     responseClassService: ResponseClassService;
+    aiModelService: AIModelService;
   },
 ) {
   // Simulación de obtención de casos de uso
@@ -187,6 +290,7 @@ async function viewResponseClasses(
   services: {
     featureService: FeatureService;
     responseClassService: ResponseClassService;
+    aiModelService: AIModelService;
   },
 ) {
   const responseClasses =
@@ -286,6 +390,30 @@ async function viewResponseClasses(
         break;
     }
   }
+}
+
+async function createPrompt(
+  command: any,
+  featureId: number,
+  aiModelService: AIModelService,
+) {
+  const promptContent = await input({
+    message: colorize(
+      `Enter the content of the new prompt for feature ${featureId}:`,
+      'yellow',
+    ),
+  });
+
+  command.log(colorize(`Creating Prompt: ${promptContent}`, 'green'));
+
+  await aiModelService.saveAIPrompt(promptContent, featureId);
+
+  command.log(
+    colorize(
+      `\nPrompt Details: \nContent: ${promptContent}\nFeature ID: ${featureId}`,
+      'green',
+    ),
+  );
 }
 
 async function createUseCase(command: any, featureId: number) {
