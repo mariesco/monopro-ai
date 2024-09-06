@@ -51,11 +51,18 @@ export const ResponseClassTable = pgTable('response_classes', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
-// export const UseCaseTable = pgTable('use_cases', {
-//   id: serial('id').primaryKey(),
-//   name: varchar('name', { length: 255 }).notNull(),
-//   description: text('description').notNull(),
-//   featureId: integer('feature_id').notNull().references((): AnyPgColumn => FeatureTable.id),
-//   responseClassExpectedId: integer('response_class_expected_id').notNull().references((): AnyPgColumn => ResponseClassTable.id),
-//   createdAt: timestamp('created_at').notNull().defaultNow(),
-// });
+export const UseCaseTable = pgTable('use_cases', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  caseDescription: text('case_description').notNull(),
+  promptId: integer('prompt_id')
+    .notNull()
+    .references((): AnyPgColumn => AIPromptTable.id),
+  featureId: integer('feature_id')
+    .notNull()
+    .references((): AnyPgColumn => FeatureTable.id),
+  responseClassExpectedId: integer('response_class_expected_id')
+    .notNull()
+    .references((): AnyPgColumn => ResponseClassTable.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});

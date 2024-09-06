@@ -6,12 +6,14 @@ import {
   AIModelService,
   FeatureService,
   ResponseClassService,
+  UseCaseService,
 } from 'monopro-ai';
 
 export default class Menu extends BaseCommand {
   private featureService!: FeatureService;
   private responseClassService!: ResponseClassService;
   private aiModelService!: AIModelService;
+  private useCaseService!: UseCaseService;
 
   static override description = 'Main menu for MonoPro CLI';
 
@@ -21,6 +23,7 @@ export default class Menu extends BaseCommand {
     this.responseClassService =
       await this.initializeService(ResponseClassService);
     this.aiModelService = await this.initializeService(AIModelService);
+    this.useCaseService = await this.initializeService(UseCaseService);
 
     const action = await select({
       message: colorize('What would you like to do?', 'yellow'),
@@ -49,6 +52,7 @@ export default class Menu extends BaseCommand {
           featureService: this.featureService,
           responseClassService: this.responseClassService,
           aiModelService: this.aiModelService,
+          useCaseService: this.useCaseService,
         });
         break;
       case 'exit':

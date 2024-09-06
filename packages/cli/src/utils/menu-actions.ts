@@ -4,6 +4,7 @@ import {
   AIModelService,
   FeatureService,
   ResponseClassService,
+  UseCaseService,
 } from 'monopro-ai';
 
 export async function listFeatures(
@@ -12,9 +13,15 @@ export async function listFeatures(
     featureService: FeatureService;
     responseClassService: ResponseClassService;
     aiModelService: AIModelService;
+    useCaseService: UseCaseService;
   },
 ) {
-  const { featureService, responseClassService, aiModelService } = services;
+  const {
+    featureService,
+    responseClassService,
+    aiModelService,
+    useCaseService,
+  } = services;
   const features = await featureService.getFeatures();
 
   const selectedFeature = await select({
@@ -84,6 +91,7 @@ export async function listFeatures(
       featureService,
       responseClassService,
       aiModelService,
+      useCaseService,
     });
   }
 }
@@ -96,6 +104,7 @@ export async function handleFeatureAction(
     featureService: FeatureService;
     responseClassService: ResponseClassService;
     aiModelService: AIModelService;
+    useCaseService: UseCaseService;
   },
 ) {
   switch (action) {
@@ -119,7 +128,7 @@ export async function handleFeatureAction(
       );
       break;
     case 'createUseCase':
-      await createUseCase(command, featureId);
+      await createUseCase(command, featureId, services);
       break;
     case 'backToFeatures':
       await listFeatures(command, services);
@@ -137,6 +146,7 @@ async function viewPrompts(
     featureService: FeatureService;
     responseClassService: ResponseClassService;
     aiModelService: AIModelService;
+    useCaseService: UseCaseService;
   },
 ) {
   const prompts =
@@ -149,7 +159,10 @@ async function viewPrompts(
 
   const selectedPrompt = await select({
     message: colorize(`Select a prompt to view:`, 'yellow'),
-    choices: prompts.map((p) => ({ name: p.content, value: p.id })),
+    choices: prompts.map((p) => ({
+      name: `[ID: ${p.id}] ${p.content}`,
+      value: p.id,
+    })),
   });
 
   const prompt = prompts.find((p) => p.id === selectedPrompt);
@@ -157,7 +170,7 @@ async function viewPrompts(
   if (prompt) {
     command.log(
       colorize(
-        `\nPrompt Details: \nContent: ${prompt.content}\nFeature ID: ${prompt.featureId}`,
+        `\nPrompt ID: ${prompt.id}\nContent: ${prompt.content}\nFeature ID: ${prompt.featureId}`,
         'green',
       ),
     );
@@ -215,19 +228,19 @@ async function viewUseCases(
     featureService: FeatureService;
     responseClassService: ResponseClassService;
     aiModelService: AIModelService;
+    useCaseService: UseCaseService;
   },
 ) {
-  // Simulación de obtención de casos de uso
-  const useCases = [
-    { name: 'Use Case 1', id: 'uc1' },
-    { name: 'Use Case 2', id: 'uc2' },
-  ];
+  const useCases =
+    await services.useCaseService.getUseCasesByFeatureId(featureId);
+
+  if (useCases.length === 0) {
+    command.log(colorize('No use cases found for this feature.', 'red'));
+    return;
+  }
 
   const selectedUseCase = await select({
-    message: colorize(
-      `Select a use case to view for feature ${featureId}:`,
-      'yellow',
-    ),
+    message: colorize(`Select a use case to view:`, 'yellow'),
     choices: useCases.map((uc) => ({ name: uc.name, value: uc.id })),
   });
 
@@ -235,7 +248,10 @@ async function viewUseCases(
 
   if (useCase) {
     command.log(
-      colorize(`\nUse Case Details:\nName: ${useCase.name}`, 'green'),
+      colorize(
+        `\nUse Case Details:\nName: ${useCase.name}\nDescription: ${useCase.caseDescription}\nPrompt ID: ${useCase.promptId}\nResponse Class Expected ID: ${useCase.responseClassExpectedId}`,
+        'green',
+      ),
     );
 
     const action = await select({
@@ -272,7 +288,7 @@ async function viewUseCases(
         break;
       case 'deleteUseCase':
         command.log(colorize(`Deleting Use Case: ${useCase.name}`, 'red'));
-        // Implementar la lógica de eliminación
+        await services.useCaseService.deleteUseCase(useCase.id);
         break;
       case 'backToFeatureMenu':
         await listFeatures(command, services);
@@ -291,6 +307,7 @@ async function viewResponseClasses(
     featureService: FeatureService;
     responseClassService: ResponseClassService;
     aiModelService: AIModelService;
+    useCaseService: UseCaseService;
   },
 ) {
   const responseClasses =
@@ -307,7 +324,10 @@ async function viewResponseClasses(
       `Select a response class to view for feature ${featureId}:`,
       'yellow',
     ),
-    choices: responseClasses.map((rc) => ({ name: rc.name, value: rc.id })),
+    choices: responseClasses.map((rc) => ({
+      name: `[ID: ${rc.id}] ${rc.name}`,
+      value: rc.id,
+    })),
   });
 
   const responseClass = responseClasses.find(
@@ -317,7 +337,7 @@ async function viewResponseClasses(
   if (responseClass) {
     command.log(
       colorize(
-        `\nResponse Class Details:\nName: ${responseClass.name}\nDescription: ${responseClass.description}\nFeature ID: ${responseClass.featureId}`,
+        `\nResponse Class ID: ${responseClass.id}\nName: ${responseClass.name}\nDescription: ${responseClass.description}\nFeature ID: ${responseClass.featureId}`,
         'green',
       ),
     );
@@ -416,17 +436,57 @@ async function createPrompt(
   );
 }
 
-async function createUseCase(command: any, featureId: number) {
+async function createUseCase(
+  command: any,
+  featureId: number,
+  services: {
+    featureService: FeatureService;
+    useCaseService: UseCaseService;
+    aiModelService: AIModelService;
+    responseClassService: ResponseClassService;
+  },
+) {
   const useCaseName = await input({
+    message: colorize(`Enter the name of the new use case:`, 'yellow'),
+  });
+  const useCaseDescription = await input({
+    message: colorize(`Enter the description of the new use case:`, 'yellow'),
+  });
+  const promptId = await select({
+    message: colorize(`Select a prompt to use for the use case:`, 'yellow'),
+    choices: await services.aiModelService
+      .getPromptsByFeatureId(featureId)
+      .then((prompts) =>
+        prompts.map((prompt) => ({ name: prompt.content, value: prompt.id })),
+      ),
+  });
+  const responseClassExpectedId = await select({
     message: colorize(
-      `Enter the name of the new use case for feature ${featureId}:`,
+      `Select a response class to use for the use case:`,
       'yellow',
     ),
+    choices: await services.responseClassService
+      .getResponseClassesByFeatureId(featureId)
+      .then((responseClasses) =>
+        responseClasses.map((rc) => ({ name: rc.name, value: rc.id })),
+      ),
   });
 
   command.log(colorize(`Creating Use Case: ${useCaseName}`, 'green'));
-  // Simulación de creación de caso de uso
-  // await saveUseCase(featureId, useCaseName);
+  await services.useCaseService.createUseCase({
+    name: useCaseName,
+    caseDescription: useCaseDescription,
+    promptId: promptId,
+    featureId: featureId,
+    responseClassExpectedId: responseClassExpectedId,
+  });
+
+  command.log(
+    colorize(
+      `\nUse Case Details:\nName: ${useCaseName}\nDescription: ${useCaseDescription}\nPrompt ID: ${promptId}\nResponse Class Expected ID: ${responseClassExpectedId}`,
+      'green',
+    ),
+  );
 }
 
 async function createResponseClass(
