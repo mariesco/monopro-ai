@@ -46,13 +46,4 @@ export default class TestCommand extends BaseCommand {
       })),
     });
   }
-
-  private runTests(featureId: string) {
-    return {
-      accuracy: '85%',
-      precision: '80%',
-      recall: '78%',
-      f1Score: '79%',
-    };
-  }
 }

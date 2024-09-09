@@ -2,12 +2,12 @@ import { z } from 'zod';
 import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { Feature } from '../../../shared/models/Feature.js';
-import type { InsertConfusionMatrix } from '../../../shared/models/ConfusionMatrix.js';
+import type { ConfusionMatrixResult } from '../../../shared/models/ConfusionMatrix.js';
 
 export class ConfusionMatrixGenerator {
   async generateConfusionMatrix(
     feature: Feature,
-  ): Promise<InsertConfusionMatrix[]> {
+  ): Promise<ConfusionMatrixResult> {
     const groq = createOpenAI({
       apiKey: process.env.GROQ_API_KEY,
       baseURL: 'https://api.groq.com/openai/v1',
@@ -48,7 +48,25 @@ export class ConfusionMatrixGenerator {
       JSON.parse(confusionMatrix),
     );
 
-    return parsedConfusionMatrix;
+    const confusionMatrixResult: ConfusionMatrixResult = {
+      confusionMatrix: parsedConfusionMatrix.map((cm) => ({
+        ...cm,
+        featureId: feature.id,
+      })),
+      generatedTexts: generatedResponsesArray.map((gr) => ({
+        id: `${gr.promptId}-${gr.useCaseId}`,
+        text: gr.generatedResponse,
+      })),
+      expectedTexts: feature.useCases.map((uc) => ({
+        id: `${uc.id}`,
+        text:
+          feature.responseClasses.find(
+            (rc) => rc.id === uc.responseClassExpectedId,
+          )?.description || '',
+      })),
+    };
+
+    return confusionMatrixResult;
   }
 
   private buildResponseGenerationPrompt(feature: Feature): string {

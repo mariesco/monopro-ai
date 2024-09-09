@@ -19,7 +19,7 @@
     /* If transpiling with TypeScript: */
     "module": "NodeNext",
     "outDir": "dist",
-    "rootDir": "",
+    "rootDir": "src",
     "sourceMap": true,
 
     /* AND if you're building for a library: */
