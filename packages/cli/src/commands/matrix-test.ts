@@ -1,7 +1,12 @@
-import { Command, Flags } from '@oclif/core';
+import { Flags } from '@oclif/core';
 import { select } from '@inquirer/prompts';
+import { DataProcessingService, FeatureService } from 'monopro-ai';
+import BaseCommand from '../utils/base-command.js';
 
-export default class TestCommand extends Command {
+export default class TestCommand extends BaseCommand {
+  private featureService!: FeatureService;
+  private dataProcessingService!: DataProcessingService;
+
   static override description = 'Run tests for a feature in MonoPro';
 
   static override flags = {
@@ -9,31 +14,36 @@ export default class TestCommand extends Command {
   };
 
   public async run(): Promise<void> {
+    this.dataProcessingService = await this.initializeService(
+      DataProcessingService,
+    );
+
     const { flags } = await this.parse(TestCommand);
 
     const featureId = flags.feature || (await this.selectFeature());
+    await this.dataProcessingService.processFeature(
+      Number(featureId),
+      (progress) => {
+        this.updateProgressBar(progress.stage, progress.progress);
+      },
+    );
+    this.log('\nProcess completed.');
+  }
 
-    this.log(`Running tests for feature ${featureId}`);
-    // Simulaci�n de ejecuci�n de pruebas
-    const metrics = this.runTests(featureId);
-    this.log(`Test results for feature ${featureId}:`);
-    this.log(JSON.stringify(metrics, null, 2));
+  private updateProgressBar(stage: string, progress: number) {
+    const dots = '.'.repeat((progress % 3) + 1);
+    this.log(`\r${stage} ${dots.padEnd(3)} ${progress}%`);
   }
 
   private async selectFeature() {
-    const features = ['Feature A', 'Feature B', 'Feature C'];
+    this.featureService = await this.initializeService(FeatureService);
+    const features = await this.featureService.getFeatures();
     return await select({
       message: 'Select a feature:',
-      choices: features.map((feature) => ({ name: feature, value: feature })),
+      choices: features.map((feature) => ({
+        name: feature.name,
+        value: feature.id,
+      })),
     });
-  }
-
-  private runTests(featureId: string) {
-    return {
-      accuracy: '85%',
-      precision: '80%',
-      recall: '78%',
-      f1Score: '79%',
-    };
   }
 }

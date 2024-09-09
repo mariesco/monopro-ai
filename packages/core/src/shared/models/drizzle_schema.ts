@@ -67,3 +67,23 @@ export const UseCaseTable = pgTable('use_cases', {
     .references((): AnyPgColumn => ResponseClassTable.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+export const MetricsTable = pgTable('metrics', {
+  id: serial('id').primaryKey(),
+  featureId: integer('feature_id').references(() => FeatureTable.id),
+  name: text('name'),
+  type: text('type'),
+  value: text('value'),
+  timestamp: timestamp('timestamp').defaultNow(),
+});
+
+export const ConfusionMatrixTable = pgTable('confusion_matrix', {
+  id: serial('id').primaryKey(),
+  promptId: integer('prompt_id').references(() => AIPromptTable.id),
+  useCaseId: integer('use_case_id').references(() => UseCaseTable.id),
+  truePositives: integer('true_positives').notNull(),
+  falsePositives: integer('false_positives').notNull(),
+  trueNegatives: integer('true_negatives').notNull(),
+  falseNegatives: integer('false_negatives').notNull(),
+  timestamp: timestamp('timestamp').defaultNow(),
+});
