@@ -40,15 +40,19 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.27.7",
+    "@types/sentiment": "^5.0.4",
     "drizzle-kit": "^0.24.2",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^0.0.58",
     "@neondatabase/serverless": "^0.9.4",
+    "ai": "^3.3.28",
     "drizzle-orm": "^0.33.0",
     "drizzle-zod": "^0.5.1",
+    "sentiment": "^5.0.2",
     "zod": "^3.23.8"
   }
 }
