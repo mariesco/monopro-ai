@@ -9,3 +9,9 @@ export const selectConfusionMatrixSchema =
 
 export type InsertConfusionMatrix = z.infer<typeof insertConfusionMatrixSchema>;
 export type SelectConfusionMatrix = z.infer<typeof selectConfusionMatrixSchema>;
+
+export interface ConfusionMatrixResult {
+  confusionMatrix: InsertConfusionMatrix[];
+  generatedTexts: { id: string; text: string }[];
+  expectedTexts: { id: string; text: string }[];
+}
