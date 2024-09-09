@@ -1,11 +1,9 @@
 import { z } from 'zod';
+import { MetricsTable } from './drizzle_schema.js';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
-export const MetricSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  value: z.number(),
-  promptId: z.string().uuid(),
-  createdAt: z.date().default(new Date()),
-});
+export const insertMetricSchema = createInsertSchema(MetricsTable);
+export const selectMetricSchema = createSelectSchema(MetricsTable);
 
-export type Metric = z.infer<typeof MetricSchema>;
+export type InsertMetric = z.infer<typeof insertMetricSchema>;
+export type SelectMetric = z.infer<typeof selectMetricSchema>;
