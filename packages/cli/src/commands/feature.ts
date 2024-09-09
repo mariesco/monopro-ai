@@ -19,6 +19,10 @@ export default class FeatureCommand extends BaseCommand {
       char: 'm',
       description: 'Model to use for the feature',
     }),
+    url: Flags.string({
+      char: 'u',
+      description: 'URL of the feature',
+    }),
     help: Flags.help({ char: 'h', description: 'Show help for the command' }),
   };
 
@@ -48,12 +52,20 @@ export default class FeatureCommand extends BaseCommand {
           message: 'Select a model:',
           choices: this.models.map((model) => ({ name: model, value: model })),
         }));
+      const url =
+        flags.url || (await input({ message: 'Enter the feature URL:' }));
 
       this.log(`Creating feature: ${name}`);
       this.log(`Description: ${description}`);
       this.log(`Selected model: ${model}`);
+      this.log(`URL: ${url}`);
 
-      await this.featureService.createFeature({ name, description, model });
+      await this.featureService.createFeature({
+        name,
+        description,
+        model,
+        url,
+      });
 
       this.log('\x1b[32m%s\x1b[0m', 'Feature saved successfully!');
     } else if (args.action === 'list') {

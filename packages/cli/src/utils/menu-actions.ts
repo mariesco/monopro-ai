@@ -34,7 +34,7 @@ export async function listFeatures(
   if (feature) {
     command.log(
       colorize(
-        `\nFeature Details:\nName: ${feature.name}\nDescription: ${feature.description}\nModel: ${feature.model}`,
+        `\nFeature Details:\nName: ${feature.name}\nDescription: ${feature.description}\nModel: ${feature.model}\nUrl: ${feature.url}`,
         'green',
       ),
     );

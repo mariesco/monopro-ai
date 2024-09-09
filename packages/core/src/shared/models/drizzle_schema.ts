@@ -38,6 +38,7 @@ export const FeatureTable = pgTable('features', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description').notNull(),
   model: varchar('model', { length: 255 }).notNull(),
+  url: varchar('url', { length: 255 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

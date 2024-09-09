@@ -1,4 +1,4 @@
-import { select, Separator } from '@inquirer/prompts';
+import { select, Separator, input } from '@inquirer/prompts';
 import { colorize } from '../utils/colors.js';
 import { listFeatures } from '../utils/menu-actions.js';
 import BaseCommand from '../utils/base-command.js';
@@ -61,5 +61,27 @@ export default class Menu extends BaseCommand {
     }
 
     this.run();
+  }
+
+  private async createFeature(): Promise<void> {
+    const name = await input({ message: 'Enter the feature name:' });
+    const description = await input({ message: 'Enter the feature description:' });
+    const model = await select({
+      message: 'Select a model:',
+      choices: ['Model A', 'Model B', 'Model C', 'Model D'].map((model) => ({ name: model, value: model })),
+    });
+    const url = await input({ 
+      message: 'Enter the feature URL:',
+      validate: (input) => input.trim() !== '' ? true : 'URL is required'
+    });
+
+    this.log(`Creating feature: ${name}`);
+    this.log(`Description: ${description}`);
+    this.log(`Selected model: ${model}`);
+    this.log(`URL: ${url}`);
+
+    await this.featureService.createFeature({ name, description, model, url });
+
+    this.log('\x1b[32m%s\x1b[0m', 'Feature saved successfully!');
   }
 }

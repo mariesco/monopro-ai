@@ -2,9 +2,11 @@ import { eq, inArray } from 'drizzle-orm';
 import {
   selectAIPromptSchema,
   type SelectAIPrompt,
+  type SelectAIResponse,
 } from '../../shared/models/AIModel.js';
 import {
   AIPromptTable,
+  AIResponseTable,
   AIStringTable,
 } from '../../shared/models/drizzle_schema.js';
 import { getDB } from '../../shared/utils/Database.js';
@@ -19,47 +21,47 @@ export class AIModelService {
     this.db = getDB(NEON_URL!);
   }
 
-  async saveAIPrompt(
-    promptData: string,
-    featureId: number,
-  ): Promise<SelectAIPrompt> {
-    const regex = /[\wáéíóúüñ]+|[^\w\s]|\s/g;
-    const uniqueStrings = promptData.match(regex) || [];
-
+  private async getOrCreateStrings(
+    contents: string[],
+  ): Promise<Map<string, number>> {
     const existingStrings = await this.db
       .select()
       .from(AIStringTable)
-      .where(inArray(AIStringTable.content, uniqueStrings));
+      .where(inArray(AIStringTable.content, contents));
 
-    const existingStringMap = new Map(
+    const stringMap = new Map(
       existingStrings.map((str) => [str.content, str.id]),
     );
 
-    const stringIds: number[] = [];
-
-    for (const content of uniqueStrings) {
-      let stringId = existingStringMap.get(content);
-
-      if (!stringId) {
+    for (const content of contents) {
+      if (!stringMap.has(content)) {
         const [newString] = await this.db
           .insert(AIStringTable)
           .values({ content })
           .returning();
-        stringId = newString!.id;
-        existingStringMap.set(content, stringId);
+        stringMap.set(content, newString!.id);
       }
-
-      stringIds.push(stringId);
     }
 
+    return stringMap;
+  }
+
+  private async saveStrings(data: string): Promise<number[]> {
+    const regex = /[\wáéíóúüñ]+|[^\w\s]|\s/g;
+    const uniqueStrings = data.match(regex) || [];
+    const stringMap = await this.getOrCreateStrings(uniqueStrings);
+    return uniqueStrings.map((content) => stringMap.get(content)!);
+  }
+
+  async saveAIPrompt(
+    promptData: string,
+    featureId: number,
+  ): Promise<SelectAIPrompt> {
+    const stringIds = await this.saveStrings(promptData);
     const [newPrompt] = await this.db
       .insert(AIPromptTable)
-      .values({
-        stringsIds: stringIds,
-        featureId,
-      })
+      .values({ stringsIds: stringIds, featureId })
       .returning();
-
     return newPrompt as SelectAIPrompt;
   }
 
@@ -113,6 +115,89 @@ export class AIModelService {
       content: prompt.stringsIds.map((id) => stringMap.get(id)).join(''),
       featureId: prompt.featureId,
     }));
+
+    return result;
+  }
+
+  async saveAIResponse(
+    responseData: string,
+    promptId: number,
+  ): Promise<SelectAIResponse> {
+    const stringIds = await this.saveStrings(responseData);
+    const [newResponse] = await this.db
+      .insert(AIResponseTable)
+      .values({ stringsIds: stringIds, promptId })
+      .returning();
+    return newResponse as SelectAIResponse;
+  }
+
+  async readAIResponse(responseId: number): Promise<string> {
+    const [response] = await this.db
+      .select()
+      .from(AIResponseTable)
+      .where(eq(AIResponseTable.id, responseId));
+
+    if (!response) {
+      throw new Error('Response not found');
+    }
+
+    const strings = await this.db
+      .select()
+      .from(AIStringTable)
+      .where(inArray(AIStringTable.id, response.stringsIds));
+
+    const stringMap = new Map(strings.map((s) => [s.id, s.content]));
+
+    return response.stringsIds.map((id) => stringMap.get(id)).join('');
+  }
+
+  private async saveStringsForInteraction(
+    promptData: string,
+    responseData?: string,
+  ): Promise<{ promptIds: number[]; responseIds: number[] }> {
+    const regex = /[\wáéíóúüñ]+|[^\w\s]|\s/g;
+    const promptStrings = promptData.match(regex) || [];
+    const responseStrings = responseData ? responseData.match(regex) || [] : [];
+    const allStrings = [...new Set([...promptStrings, ...responseStrings])];
+
+    const stringMap = await this.getOrCreateStrings(allStrings);
+
+    return {
+      promptIds: promptStrings.map((content) => stringMap.get(content)!),
+      responseIds: responseData
+        ? responseStrings.map((content) => stringMap.get(content)!)
+        : [],
+    };
+  }
+
+  async saveAIInteraction(
+    promptData: string | undefined,
+    responseData: string | undefined,
+    featureId: number,
+  ): Promise<{ promptId?: number; responseId?: number }> {
+    const result: { promptId?: number; responseId?: number } = {};
+
+    if (promptData) {
+      const { promptIds, responseIds } = await this.saveStringsForInteraction(
+        promptData,
+        responseData,
+      );
+
+      const [newPrompt] = await this.db
+        .insert(AIPromptTable)
+        .values({ stringsIds: promptIds, featureId })
+        .returning();
+      result.promptId = newPrompt?.id;
+      if (responseData && newPrompt) {
+        const [newResponse] = await this.db
+          .insert(AIResponseTable)
+          .values({ stringsIds: responseIds, promptId: newPrompt.id })
+          .returning();
+        result.responseId = newResponse?.id;
+      }
+    } else if (responseData) {
+      console.warn('No se puede guardar una respuesta sin un prompt asociado');
+    }
 
     return result;
   }
