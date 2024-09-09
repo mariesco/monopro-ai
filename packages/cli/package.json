@@ -19,14 +19,15 @@
   },
   "author": "Martín Riesco <martinriesco16@gmail.com> (https://github.com/mariesco)",
   "bin": {
-    "monopro": "./bin/run.js"
+    "monopro": "./dist/bin/run.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mariesco/monopro-ai.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "drizzle_migrations"
   ],
   "license": "MIT",
   "type": "module",
@@ -59,7 +60,7 @@
   "types": "./dist/index.d.ts",
   "oclif": {
     "bin": "monopro",
-    "commands": "./dist/src/commands",
+    "commands": "./dist/commands",
     "dirname": "monopro",
     "topicSeparator": " "
   }
