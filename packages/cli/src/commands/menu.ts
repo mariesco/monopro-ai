@@ -65,14 +65,19 @@ export default class Menu extends BaseCommand {
 
   private async createFeature(): Promise<void> {
     const name = await input({ message: 'Enter the feature name:' });
-    const description = await input({ message: 'Enter the feature description:' });
+    const description = await input({
+      message: 'Enter the feature description:',
+    });
     const model = await select({
       message: 'Select a model:',
-      choices: ['Model A', 'Model B', 'Model C', 'Model D'].map((model) => ({ name: model, value: model })),
+      choices: ['Model A', 'Model B', 'Model C', 'Model D'].map((model) => ({
+        name: model,
+        value: model,
+      })),
     });
-    const url = await input({ 
+    const url = await input({
       message: 'Enter the feature URL:',
-      validate: (input) => input.trim() !== '' ? true : 'URL is required'
+      validate: (input) => (input.trim() !== '' ? true : 'URL is required'),
     });
 
     this.log(`Creating feature: ${name}`);
