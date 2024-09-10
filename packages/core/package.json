@@ -1,6 +1,6 @@
 {
   "name": "monopro-ai",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Monopro is the first driver for create AI-powered experiences.",
   "main": "dist/src/index.js",
   "keywords": [
