@@ -28,9 +28,11 @@ MonoPro is designed to support teams at various stages of AI integration, from i
 ## Packages
 
 ### 1. monopro-ai [core]
+
 The core of the system, which handles the main functionalities for AI integration in your application. It provides tools to manage datasets, run tests, and monitor the metrics of deployed models.
 
 ### 2. monopro-ai-cli [cli]
+
 A command-line interface that facilitates interaction with the `monopro-core` features. It allows you to run operations quickly and efficiently across local, QA, and production environments.
 
 ## Key Features
@@ -58,6 +60,7 @@ npm install -g monopro-ai-cli
 ```bash
 export NEON_URL="your_neon_db_url"
 ```
+
 Or set the NEON_URL environment variable in your `.env` file.
 
 3. Run the migrations:
@@ -69,7 +72,7 @@ monopro migrate
 4. Start to use:
 
 ```bash
-monopro menu 
+monopro menu
 ```
 
 ### For production environment
@@ -93,14 +96,14 @@ const watcher = new MonoproWatcher();
 
 // ... your AI implementation here ...
 
-await watcher.observe({prompt: "...", response: "..."});
+await watcher.observe({ prompt: '...', response: '...' });
 ```
 
 4. Create one new route to return MonoproView:
 
 ```typescript
 app.get('/monopro', async (req, res) => {
-    return MonoproView(req, res);
+  return MonoproView(req, res);
 });
 ```
 
