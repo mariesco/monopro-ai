@@ -1,6 +1,6 @@
 {
   "name": "monopro-ai",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Monopro is the first driver for create AI-powered experiences.",
   "main": "dist/src/index.js",
   "keywords": [
@@ -53,6 +53,7 @@
     "drizzle-orm": "^0.33.0",
     "drizzle-zod": "^0.5.1",
     "sentiment": "^5.0.2",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "lit": "^3.0.0"
   }
 }

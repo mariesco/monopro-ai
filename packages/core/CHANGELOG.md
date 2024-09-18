@@ -1,5 +1,12 @@
 # monopro-ai
 
+## 0.3.0
+
+### Minor Changes
+
+- Beta use of monopro services and CLI
+- New MonoproMetricsView without Lit components
+
 ## 0.2.0
 
 ### Minor Changes
