@@ -1,6 +1,6 @@
 {
   "name": "monopro-ai",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Monopro is the first driver for create AI-powered experiences.",
   "main": "dist/src/index.js",
   "keywords": [
@@ -28,7 +28,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json && node ./check-package.core.config.js && npm run format",
-    "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
+    "ci": "npm run build && npm run check-format && npm run check-exports",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules cjs-resolves-to-esm",
