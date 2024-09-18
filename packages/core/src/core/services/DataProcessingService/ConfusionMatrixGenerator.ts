@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { generateText } from 'ai';
+import { generateObject } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { Feature } from '../../../shared/models/Feature.js';
 import type { ConfusionMatrixResult } from '../../../shared/models/ConfusionMatrix.js';
@@ -12,45 +12,73 @@ export class ConfusionMatrixGenerator {
       apiKey: process.env.GROQ_API_KEY,
       baseURL: 'https://api.groq.com/openai/v1',
     });
+    const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const { text: generatedResponses } = await generateText({
-      model: groq('llama3-groq-70b-8192-tool-use-preview'),
+    console.log('Generating responses...', feature);
+
+    // Definir el esquema para las respuestas generadas
+    const generatedResponsesSchema = z.object({
+      success: z.boolean(),
+      values: z.array(
+        z.object({
+          promptId: z.number(),
+          useCaseId: z.number(),
+          generatedResponse: z.string(),
+        }),
+      ),
+    });
+
+    const { object: generatedResponsesObject } = await generateObject({
+      model: openai('gpt-4o-mini'),
+      schema: generatedResponsesSchema,
       prompt: this.buildResponseGenerationPrompt(feature),
     });
-    const generatedResponsesSchema = z.array(
-      z.object({
-        promptId: z.number(),
-        useCaseId: z.number(),
-        generatedResponse: z.string(),
-      }),
-    );
-    const generatedResponsesArray = generatedResponsesSchema.parse(
-      JSON.parse(generatedResponses),
-    );
 
-    const { text: confusionMatrix } = await generateText({
-      model: groq('llama3-groq-70b-8192-tool-use-preview'),
+    if (!generatedResponsesObject.success) {
+      throw new Error('La generación de respuestas falló.');
+    }
+
+    const generatedResponsesArray = generatedResponsesObject.values;
+
+    console.log('----Generated responses array:', generatedResponsesArray);
+
+    // Definir el esquema para la matriz de confusión
+    const confusionMatrixSchema = z.object({
+      success: z.boolean(),
+      values: z.array(
+        z.tuple([
+          z.number(),
+          z.number(),
+          z.number(),
+          z.number(),
+          z.number(),
+          z.number(),
+        ]),
+      ),
+    });
+
+    const { object: parsedConfusionMatrixObject } = await generateObject({
+      model: groq('llama-3.1-70b-versatile'),
+      schema: confusionMatrixSchema,
       prompt: this.buildConfusionMatrixPrompt(feature, generatedResponsesArray),
     });
 
-    const confusionMatrixSchema = z.array(
-      z.object({
-        promptId: z.number(),
-        useCaseId: z.number(),
-        truePositives: z.number(),
-        falsePositives: z.number(),
-        trueNegatives: z.number(),
-        falseNegatives: z.number(),
-      }),
-    );
+    if (!parsedConfusionMatrixObject.success) {
+      throw new Error('La generación de la matriz de confusión falló.');
+    }
 
-    const parsedConfusionMatrix = confusionMatrixSchema.parse(
-      JSON.parse(confusionMatrix),
-    );
+    const parsedConfusionMatrix = parsedConfusionMatrixObject.values;
+
+    console.log('Parsed confusion matrix:', parsedConfusionMatrix);
 
     const confusionMatrixResult: ConfusionMatrixResult = {
       confusionMatrix: parsedConfusionMatrix.map((cm) => ({
-        ...cm,
+        promptId: cm[0],
+        useCaseId: cm[1],
+        truePositives: cm[2],
+        falsePositives: cm[3],
+        trueNegatives: cm[4],
+        falseNegatives: cm[5],
         featureId: feature.id,
       })),
       generatedTexts: generatedResponsesArray.map((gr) => ({
@@ -66,6 +94,23 @@ export class ConfusionMatrixGenerator {
       })),
     };
 
+    console.log('Confusion Matrix Result:', confusionMatrixResult);
+
+    // Verificar que todos los textos generados y esperados están definidos
+    confusionMatrixResult.generatedTexts.forEach((gt, index) => {
+      if (!gt.text) {
+        console.warn(
+          `Generated text is undefined at index ${index} for useCaseId ${gt.id.split('-')[1]}`,
+        );
+      }
+    });
+
+    confusionMatrixResult.expectedTexts.forEach((et, index) => {
+      if (!et.text) {
+        console.warn(`Expected text is undefined for useCaseId ${et.id}`);
+      }
+    });
+
     return confusionMatrixResult;
   }
 
@@ -74,16 +119,26 @@ export class ConfusionMatrixGenerator {
 
     feature.prompts.forEach((prompt) => {
       promptForLLM += `Prompt ${prompt.id}: ${prompt.content}\n\n`;
-      feature.useCases.forEach((useCase) => {
+      // Filtrar los casos de uso asociados a este prompt
+      const relatedUseCases = feature.useCases.filter(
+        (useCase) => useCase.promptId === prompt.id,
+      );
+      relatedUseCases.forEach((useCase) => {
         promptForLLM += `Caso de uso ${useCase.id}: ${useCase.caseDescription}\n\n`;
       });
     });
 
-    promptForLLM += `Genera una respuesta para cada caso de uso utilizando el prompt correspondiente. Devuelve los resultados como un array de objetos JSON con la siguiente estructura:
+    promptForLLM += `Genera una respuesta para cada caso de uso utilizando el prompt correspondiente. Formato: Devuelve los resultados como un objeto JSON con la siguiente estructura:
     {
-      promptId: number,
-      useCaseId: number,
-      generatedResponse: string
+      success: boolean,
+      values: [
+        {
+          promptId: number,
+          useCaseId: number,
+          generatedResponse: string
+        },
+        ...
+      ]
     }`;
 
     return promptForLLM;
@@ -95,12 +150,17 @@ export class ConfusionMatrixGenerator {
   ): string {
     let promptForLLM = `Analiza las siguientes respuestas generadas para la característica "${feature.description}" y genera una matriz de confusión para cada combinación de prompt y caso de uso:\n\n`;
 
-    feature.useCases.forEach((useCase) => {
-      const expectedResponseClass = feature.responseClasses.find(
-        (rc) => rc.id === useCase.responseClassExpectedId,
+    feature.prompts.forEach((prompt) => {
+      // Filtrar los casos de uso asociados a este prompt
+      const relatedUseCases = feature.useCases.filter(
+        (useCase) => useCase.promptId === prompt.id,
       );
 
-      feature.prompts.forEach((prompt) => {
+      relatedUseCases.forEach((useCase) => {
+        const expectedResponseClass = feature.responseClasses.find(
+          (rc) => rc.id === useCase.responseClassExpectedId,
+        );
+
         const generatedResponse = generatedResponses.find(
           (r) => r.promptId === prompt.id && r.useCaseId === useCase.id,
         );
@@ -112,15 +172,25 @@ export class ConfusionMatrixGenerator {
       });
     });
 
-    promptForLLM += `Genera una matriz de confusión para cada combinación de prompt y caso de uso, comparando la respuesta generada con la clase de respuesta esperada. La matriz debe incluir truePositives, falsePositives, trueNegatives, y falseNegatives. Devuelve los resultados como un array de objetos JSON con la siguiente estructura:
+    promptForLLM += `Genera una matriz de confusión para cada combinación de prompt y caso de uso, comparando la respuesta generada con la clase de respuesta esperada. La matriz debe incluir truePositives, falsePositives, trueNegatives, y falseNegatives. 
+    Formato: Devuelve los resultados como un objeto JSON con la siguiente estructura:
     {
-      promptId: number,
-      useCaseId: number,
-      truePositives: number,
-      falsePositives: number,
-      trueNegatives: number,
-      falseNegatives: number
+      success: boolean,
+      values: [
+        [promptId, useCaseId, truePositives, falsePositives, trueNegatives, falseNegatives],
+        ...
+      ]
+    }
+    Ejemplo: {
+      "success": true,
+      "values": [
+        [1, 1, 5, 2, 8, 1],
+        [1, 2, 4, 3, 7, 2],
+        ...
+      ]
     }`;
+
+    console.log('----Prompt for LLM:', promptForLLM);
 
     return promptForLLM;
   }

@@ -473,8 +473,8 @@ export class MetricsCalculator {
       expectedTexts.map((t) => t.text),
     );
     const responseCompleteness = this.calculateResponseCompleteness(
-      generatedTexts.map((t) => t.text),
-      expectedTexts.map((t) => t.text),
+      generatedTexts,
+      expectedTexts,
     );
 
     metrics.push({
@@ -615,16 +615,20 @@ export class MetricsCalculator {
   }
 
   private calculateResponseCompleteness(
-    generatedTexts: string[],
-    expectedTexts: string[],
+    generatedTexts: { id: string; text: string }[],
+    expectedTexts: { id: string; text: string }[],
   ): number {
     const avgCompleteness =
-      generatedTexts.reduce((sum, generatedText, index) => {
+      generatedTexts.reduce((sum, generatedText) => {
+        const useCaseId = generatedText.id.split('-')[1];
+        const expectedTextObj = expectedTexts.find((et) => et.id === useCaseId);
+        const expectedText = expectedTextObj?.text || '';
+
         const expectedKeywords = new Set(
-          expectedTexts[index]?.toLowerCase().split(/\s+/),
+          expectedText.toLowerCase().split(/\s+/),
         );
         const generatedKeywords = new Set(
-          generatedText.toLowerCase().split(/\s+/),
+          generatedText.text.toLowerCase().split(/\s+/),
         );
         const coverageRatio =
           [...expectedKeywords].filter((keyword) =>
@@ -659,22 +663,32 @@ export class MetricsCalculator {
     expectedTexts: { id: string; text: string }[];
   }): InsertMetricWithoutFeatureId[] {
     let correctSentiments = 0;
-    const totalTexts = confusionMatrixResult.generatedTexts.length;
     let sentiment = new Sentiment();
 
-    for (let i = 0; i < totalTexts; i++) {
-      const generatedSentiment = sentiment.analyze(
-        confusionMatrixResult.generatedTexts[i]?.text!,
-      ).score;
-      const expectedSentiment = sentiment.analyze(
-        confusionMatrixResult.expectedTexts[i]?.text!,
-      ).score;
+    confusionMatrixResult.generatedTexts.forEach((gt) => {
+      const [promptId, useCaseId] = gt.id.split('-').map(Number);
+      const expectedTextObj = confusionMatrixResult.expectedTexts.find(
+        (et) => et.id === useCaseId!.toString(),
+      );
+      const expectedText = expectedTextObj?.text;
+
+      if (!gt.text || !expectedText) {
+        console.error(`Texto indefinido para useCaseId ${useCaseId}:`, {
+          generatedText: gt.text,
+          expectedText: expectedText,
+        });
+        return; // O manejar de otra manera según la lógica requerida
+      }
+
+      const generatedSentiment = sentiment.analyze(gt.text).score;
+      const expectedSentiment = sentiment.analyze(expectedText).score;
 
       if (Math.sign(generatedSentiment) === Math.sign(expectedSentiment)) {
         correctSentiments++;
       }
-    }
+    });
 
+    const totalTexts = confusionMatrixResult.generatedTexts.length;
     const sentimentAccuracy = (correctSentiments / totalTexts) * 100;
 
     return [
@@ -704,16 +718,27 @@ export class MetricsCalculator {
   private calculateResponseConsistency(confusionMatrixResult: {
     generatedTexts: { id: string; text: string }[];
   }): InsertMetricWithoutFeatureId[] {
-    const texts = confusionMatrixResult.generatedTexts.map((t) => t.text);
+    const textsByUseCase: Record<number, string[]> = {};
+
+    confusionMatrixResult.generatedTexts.forEach((t) => {
+      const useCaseId = Number(t.id.split('-')[1]);
+      if (!textsByUseCase[useCaseId]) {
+        textsByUseCase[useCaseId] = [];
+      }
+      textsByUseCase[useCaseId].push(t.text);
+    });
+
     const similarities: number[] = [];
 
-    for (let i = 0; i < texts.length; i++) {
-      for (let j = i + 1; j < texts.length; j++) {
-        similarities.push(
-          this.calculateJaccardSimilarity(texts[i]!, texts[j]!),
-        );
+    Object.values(textsByUseCase).forEach((texts) => {
+      for (let i = 0; i < texts.length; i++) {
+        for (let j = i + 1; j < texts.length; j++) {
+          similarities.push(
+            this.calculateJaccardSimilarity(texts[i]!, texts[j]!),
+          );
+        }
       }
-    }
+    });
 
     const averageSimilarity =
       similarities.reduce((a, b) => a + b, 0) / similarities.length;

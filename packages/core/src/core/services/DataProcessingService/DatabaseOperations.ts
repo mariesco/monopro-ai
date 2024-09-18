@@ -1,3 +1,4 @@
+import { eq, max } from 'drizzle-orm';
 import { getDB } from '../../../shared/utils/Database.js';
 import {
   ConfusionMatrixTable,
@@ -32,5 +33,22 @@ export class DatabaseOperations {
       featureId,
     }));
     await this.db.insert(MetricsTable).values(metricsWithFeatureId);
+  }
+
+  async getMetrics(featureId: number) {
+    const metrics = await this.db
+      .select()
+      .from(MetricsTable)
+      .where(eq(MetricsTable.featureId, featureId));
+    return metrics;
+  }
+
+  async getLastMetricTimestamp(featureId: number): Promise<Date> {
+    const [result] = await this.db
+      .select({ lastUpdated: max(MetricsTable.timestamp) })
+      .from(MetricsTable)
+      .where(eq(MetricsTable.featureId, featureId));
+
+    return result?.lastUpdated || new Date();
   }
 }

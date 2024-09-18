@@ -33,16 +33,29 @@ export class DataProcessingService {
 
     const feature = await this.featureDataLoader.getFeatureData(featureId);
     emitProgress('featureDataLoaded', 20);
+    console.log('ENTRA ACA?');
 
     const confusionMatrixResult: ConfusionMatrixResult =
       await this.confusionMatrixGenerator.generateConfusionMatrix(feature);
     emitProgress('confusionMatrixGenerated', 60);
+
+    console.log(
+      'Parsed confusion matrix:',
+      confusionMatrixResult.confusionMatrix,
+    );
 
     const savedConfusionMatrix =
       await this.databaseOperations.saveConfusionMatrix(
         confusionMatrixResult.confusionMatrix,
       );
     emitProgress('confusionMatrixSaved', 70);
+
+    if (
+      !confusionMatrixResult.generatedTexts ||
+      !confusionMatrixResult.expectedTexts
+    ) {
+      throw new Error('GeneratedTexts or ExpectedTexts are undefined.');
+    }
 
     const metrics = await this.metricsCalculator.calculateMetrics({
       confusionMatrix: savedConfusionMatrix,
@@ -76,5 +89,52 @@ export class DataProcessingService {
     return {
       /* regressionData */
     };
+  }
+
+  async getMetrics({ featureId }: { featureId: number }) {
+    const metrics = await this.databaseOperations.getMetrics(featureId);
+    return metrics.reduce(
+      (acc, metric) => {
+        if (metric.type && metric.name && metric.value) {
+          if (!acc[metric.type]) {
+            acc[metric.type] = [];
+          }
+          acc[metric.type]!.push({
+            name: metric.name,
+            value: metric.value,
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, { name: string; value: string }[]>,
+    );
+  }
+
+  async getMetricsWithTimestamp({
+    featureId,
+  }: {
+    featureId: number;
+  }): Promise<{ metrics: Record<string, any[]>; lastUpdated: Date }> {
+    const metrics = await this.databaseOperations.getMetrics(featureId);
+    const lastUpdated =
+      await this.databaseOperations.getLastMetricTimestamp(featureId);
+
+    const groupedMetrics = metrics.reduce(
+      (acc, metric) => {
+        if (metric.type && metric.name && metric.value) {
+          if (!acc[metric.type]) {
+            acc[metric.type] = [];
+          }
+          acc[metric.type]!.push({
+            name: metric.name,
+            value: metric.value,
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, { name: string; value: string }[]>,
+    );
+
+    return { metrics: groupedMetrics, lastUpdated };
   }
 }
