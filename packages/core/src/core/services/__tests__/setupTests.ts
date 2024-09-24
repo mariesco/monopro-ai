@@ -6,9 +6,7 @@ vi.mock('../../../shared/utils/Database.js', async (importOriginal) => {
   const client = neon(process.env.NEON_TEST_URL!);
   const db = drizzle(client);
   return {
-    ...(await importOriginal<
-      typeof import('../../../shared/utils/Database.js')
-    >()),
+    ...(await importOriginal<typeof import('../../../shared/utils/Database.js')>()),
     getDB: (neonUrl: string) => db,
   };
 });

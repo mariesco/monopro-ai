@@ -4,8 +4,7 @@ import { FeatureService } from '../FeatureService.js';
 describe('FeatureService', () => {
   let featureService: FeatureService;
   let featureId: number;
-  const NEON_URL =
-    'postgresql://flymapsdb_owner:wi9VNOBT0kDx@ep-raspy-bonus-a50kyoxq.us-east-2.aws.neon.tech/flymapsdb?sslmode=require';
+  const NEON_URL = process.env.NEON_TEST_URL!;
 
   beforeAll(async () => {
     featureService = new FeatureService(NEON_URL);
