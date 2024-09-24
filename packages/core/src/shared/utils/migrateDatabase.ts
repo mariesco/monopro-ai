@@ -24,7 +24,6 @@ export async function migrateDB(neonUrl: string) {
     ];
 
     for (const folderPath of possiblePaths) {
-      console.log('Checking folder:', folderPath);
       if (fs.existsSync(folderPath)) {
         return folderPath;
       }
@@ -38,8 +37,6 @@ export async function migrateDB(neonUrl: string) {
   }
 
   const migrationsFolder = findMigrationsFolder(__dirname);
-
-  console.log('Migrations folder:', migrationsFolder);
 
   try {
     await drizzleMigrate(db, { migrationsFolder });
