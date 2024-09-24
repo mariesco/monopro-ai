@@ -32,7 +32,7 @@
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules cjs-resolves-to-esm",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
     "dev": "vitest",
     "local-release": "changeset version && changeset publish",
     "prepublishOnly": "npm run ci"
@@ -41,6 +41,7 @@
     "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.27.7",
     "@types/sentiment": "^5.0.4",
+    "dotenv": "^16.4.5",
     "drizzle-kit": "^0.24.2",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
