@@ -14,9 +14,8 @@ export class ConfusionMatrixGenerator {
     });
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    console.log('Generating responses...', feature);
+    //console.log('Generating responses...', feature);
 
-    // Definir el esquema para las respuestas generadas
     const generatedResponsesSchema = z.object({
       success: z.boolean(),
       values: z.array(
@@ -35,14 +34,13 @@ export class ConfusionMatrixGenerator {
     });
 
     if (!generatedResponsesObject.success) {
-      throw new Error('La generación de respuestas falló.');
+      throw new Error('Failed to generate responses.');
     }
 
     const generatedResponsesArray = generatedResponsesObject.values;
 
-    console.log('----Generated responses array:', generatedResponsesArray);
+    //console.log('----Generated responses array:', generatedResponsesArray);
 
-    // Definir el esquema para la matriz de confusión
     const confusionMatrixSchema = z.object({
       success: z.boolean(),
       values: z.array(
@@ -64,12 +62,12 @@ export class ConfusionMatrixGenerator {
     });
 
     if (!parsedConfusionMatrixObject.success) {
-      throw new Error('La generación de la matriz de confusión falló.');
+      throw new Error('Failed to generate the confusion matrix.');
     }
 
     const parsedConfusionMatrix = parsedConfusionMatrixObject.values;
 
-    console.log('Parsed confusion matrix:', parsedConfusionMatrix);
+    //console.log('Parsed confusion matrix:', parsedConfusionMatrix);
 
     const confusionMatrixResult: ConfusionMatrixResult = {
       confusionMatrix: parsedConfusionMatrix.map((cm) => ({
@@ -94,9 +92,8 @@ export class ConfusionMatrixGenerator {
       })),
     };
 
-    console.log('Confusion Matrix Result:', confusionMatrixResult);
+    //console.log('Confusion Matrix Result:', confusionMatrixResult);
 
-    // Verificar que todos los textos generados y esperados están definidos
     confusionMatrixResult.generatedTexts.forEach((gt, index) => {
       if (!gt.text) {
         console.warn(
@@ -190,7 +187,7 @@ export class ConfusionMatrixGenerator {
       ]
     }`;
 
-    console.log('----Prompt for LLM:', promptForLLM);
+    //console.log('----Prompt for LLM:', promptForLLM);
 
     return promptForLLM;
   }

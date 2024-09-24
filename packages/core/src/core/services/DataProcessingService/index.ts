@@ -29,26 +29,23 @@ export class DataProcessingService {
       }
     };
 
-    emitProgress('start', 0);
+    emitProgress('starting the calculation', 0);
 
     const feature = await this.featureDataLoader.getFeatureData(featureId);
-    emitProgress('featureDataLoaded', 20);
-    console.log('ENTRA ACA?');
+    emitProgress(
+      'Feature data loaded, starting confusion matrix generation',
+      20,
+    );
 
     const confusionMatrixResult: ConfusionMatrixResult =
       await this.confusionMatrixGenerator.generateConfusionMatrix(feature);
-    emitProgress('confusionMatrixGenerated', 60);
-
-    console.log(
-      'Parsed confusion matrix:',
-      confusionMatrixResult.confusionMatrix,
-    );
+    emitProgress('Confusion matrix generated, saving to database', 60);
 
     const savedConfusionMatrix =
       await this.databaseOperations.saveConfusionMatrix(
         confusionMatrixResult.confusionMatrix,
       );
-    emitProgress('confusionMatrixSaved', 70);
+    emitProgress('Confusion matrix saved, calculating metrics', 70);
 
     if (
       !confusionMatrixResult.generatedTexts ||
@@ -62,10 +59,12 @@ export class DataProcessingService {
       generatedTexts: confusionMatrixResult.generatedTexts,
       expectedTexts: confusionMatrixResult.expectedTexts,
     });
-    emitProgress('metricsCalculated', 90);
+    emitProgress('Metrics calculated, saving to database', 90);
+
+    console.log('Metrics Result:', metrics);
 
     await this.databaseOperations.saveMetrics(featureId, metrics);
-    emitProgress('complete', 100);
+    emitProgress('Calculation complete', 100);
 
     return { confusionMatrix: savedConfusionMatrix, metrics };
   }

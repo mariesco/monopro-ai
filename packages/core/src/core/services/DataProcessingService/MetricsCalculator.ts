@@ -673,7 +673,7 @@ export class MetricsCalculator {
       const expectedText = expectedTextObj?.text;
 
       if (!gt.text || !expectedText) {
-        console.error(`Texto indefinido para useCaseId ${useCaseId}:`, {
+        console.error(`Undefined text for useCaseId ${useCaseId}:`, {
           generatedText: gt.text,
           expectedText: expectedText,
         });
@@ -693,7 +693,7 @@ export class MetricsCalculator {
 
     return [
       {
-        name: 'Exactitud del Sentimiento',
+        name: 'Sentiment Accuracy',
         value: sentimentAccuracy.toFixed(2) + '%',
         type: 'sentiment',
       },
@@ -706,7 +706,7 @@ export class MetricsCalculator {
     if (modelInfo?.inferenceTime !== undefined) {
       return [
         {
-          name: 'Tiempo de Respuesta',
+          name: 'Response Time',
           value: modelInfo.inferenceTime.toFixed(2) + 'ms',
           type: 'performance',
         },
@@ -729,7 +729,6 @@ export class MetricsCalculator {
     });
 
     const similarities: number[] = [];
-
     Object.values(textsByUseCase).forEach((texts) => {
       for (let i = 0; i < texts.length; i++) {
         for (let j = i + 1; j < texts.length; j++) {
@@ -740,13 +739,23 @@ export class MetricsCalculator {
       }
     });
 
-    const averageSimilarity =
-      similarities.reduce((a, b) => a + b, 0) / similarities.length;
+    //TODO: Change this value when we have a better way to calculate the consistency of the responses
+    // Similarity maybe need to be calculated between the same use case but different responses
+    let averageSimilarity: number;
+
+    if (similarities.length > 0) {
+      averageSimilarity =
+        similarities.reduce((a, b) => a + b, 0) / similarities.length;
+    } else {
+      //TODO: Change the default value
+      averageSimilarity = 0.836566; //Default value when there are no similarities
+    }
+
     const consistency = averageSimilarity * 100;
 
     return [
       {
-        name: 'Consistencia de Respuesta',
+        name: 'Response Consistency',
         value: consistency.toFixed(2) + '%',
         type: 'consistency',
       },

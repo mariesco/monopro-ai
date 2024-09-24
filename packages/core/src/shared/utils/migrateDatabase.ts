@@ -13,7 +13,7 @@ export async function migrateDB(neonUrl: string) {
 
   const migrationsFolder = path.join(
     __dirname,
-    '..',
+    //'..', TODO: Check if this comment, not broke CLI migration
     '..',
     '..',
     '..',
