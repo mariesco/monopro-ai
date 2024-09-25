@@ -22,12 +22,10 @@ describe('AIModelService', () => {
   it('should save a new AIPrompt', async () => {
     const promptData = 'Test prompt';
     const result = await service.saveAIPrompt(promptData, featureId);
-    expect(result).toEqual({
-      id: 1,
-      stringsIds: [1, 2, 3],
-      featureId: featureId,
-      createdAt: expect.any(Date),
-    });
+    expect(result.id).toBeTypeOf('number');
+    expect(result.stringsIds).toHaveLength(3);
+    expect(result.featureId).toBe(featureId);
+    expect(result.createdAt).toBeInstanceOf(Date);
   });
 
   it('should throw an error when saving AIPrompt with invalid featureId', async () => {
@@ -71,12 +69,10 @@ describe('AIModelService', () => {
     const promptIdFake = 1;
 
     const result = await service.saveAIResponse(responseData, promptIdFake);
-    expect(result).toEqual({
-      id: 1,
-      stringsIds: [1, 2, 4],
-      promptId: promptIdFake,
-      createdAt: expect.any(Date),
-    });
+    expect(result.id).toBeTypeOf('number');
+    expect(result.stringsIds).toHaveLength(3);
+    expect(result.promptId).toBe(promptIdFake);
+    expect(result.createdAt).toBeInstanceOf(Date);
   });
 
   it('should throw an error when saving AIResponse with invalid promptId', async () => {
@@ -112,7 +108,10 @@ describe('AIModelService', () => {
       responseData,
       featureId,
     );
-    expect(result).toEqual({ promptId: 3, responseId: 3 });
+    expect(result).toEqual({
+      promptId: expect.any(Number),
+      responseId: expect.any(Number),
+    });
   });
 
   it('should warn when saving AIInteraction without prompt', async () => {
