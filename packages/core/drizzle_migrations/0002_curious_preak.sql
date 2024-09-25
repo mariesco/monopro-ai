@@ -1,0 +1,1 @@
+ALTER TABLE "features" ADD COLUMN "url" varchar(255) NOT NULL;

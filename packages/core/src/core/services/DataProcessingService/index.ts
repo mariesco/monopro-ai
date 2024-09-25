@@ -29,30 +29,42 @@ export class DataProcessingService {
       }
     };
 
-    emitProgress('start', 0);
+    emitProgress('starting the calculation', 0);
 
     const feature = await this.featureDataLoader.getFeatureData(featureId);
-    emitProgress('featureDataLoaded', 20);
+    emitProgress(
+      'Feature data loaded, starting confusion matrix generation',
+      20,
+    );
 
     const confusionMatrixResult: ConfusionMatrixResult =
       await this.confusionMatrixGenerator.generateConfusionMatrix(feature);
-    emitProgress('confusionMatrixGenerated', 60);
+    emitProgress('Confusion matrix generated, saving to database', 60);
 
     const savedConfusionMatrix =
       await this.databaseOperations.saveConfusionMatrix(
         confusionMatrixResult.confusionMatrix,
       );
-    emitProgress('confusionMatrixSaved', 70);
+    emitProgress('Confusion matrix saved, calculating metrics', 70);
+
+    if (
+      !confusionMatrixResult.generatedTexts ||
+      !confusionMatrixResult.expectedTexts
+    ) {
+      throw new Error('GeneratedTexts or ExpectedTexts are undefined.');
+    }
 
     const metrics = await this.metricsCalculator.calculateMetrics({
       confusionMatrix: savedConfusionMatrix,
       generatedTexts: confusionMatrixResult.generatedTexts,
       expectedTexts: confusionMatrixResult.expectedTexts,
     });
-    emitProgress('metricsCalculated', 90);
+    emitProgress('Metrics calculated, saving to database', 90);
+
+    console.log('Metrics Result:', metrics);
 
     await this.databaseOperations.saveMetrics(featureId, metrics);
-    emitProgress('complete', 100);
+    emitProgress('Calculation complete', 100);
 
     return { confusionMatrix: savedConfusionMatrix, metrics };
   }
@@ -76,5 +88,52 @@ export class DataProcessingService {
     return {
       /* regressionData */
     };
+  }
+
+  async getMetrics({ featureId }: { featureId: number }) {
+    const metrics = await this.databaseOperations.getMetrics(featureId);
+    return metrics.reduce(
+      (acc, metric) => {
+        if (metric.type && metric.name && metric.value) {
+          if (!acc[metric.type]) {
+            acc[metric.type] = [];
+          }
+          acc[metric.type]!.push({
+            name: metric.name,
+            value: metric.value,
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, { name: string; value: string }[]>,
+    );
+  }
+
+  async getMetricsWithTimestamp({
+    featureId,
+  }: {
+    featureId: number;
+  }): Promise<{ metrics: Record<string, any[]>; lastUpdated: Date }> {
+    const metrics = await this.databaseOperations.getMetrics(featureId);
+    const lastUpdated =
+      await this.databaseOperations.getLastMetricTimestamp(featureId);
+
+    const groupedMetrics = metrics.reduce(
+      (acc, metric) => {
+        if (metric.type && metric.name && metric.value) {
+          if (!acc[metric.type]) {
+            acc[metric.type] = [];
+          }
+          acc[metric.type]!.push({
+            name: metric.name,
+            value: metric.value,
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, { name: string; value: string }[]>,
+    );
+
+    return { metrics: groupedMetrics, lastUpdated };
   }
 }

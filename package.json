@@ -6,7 +6,7 @@
   "scripts": {
     "build": "lerna run build",
     "ci": "lerna run ci",
-    "test": "lerna run test",
+    "test": "cd packages/core && npm run test && cd ../cli && npm run test",
     "lint": "lerna run lint",
     "publish": "lerna publish"
   },
