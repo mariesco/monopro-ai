@@ -33,6 +33,7 @@
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules cjs-resolves-to-esm",
     "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "dev": "vitest",
     "local-release": "changeset version && changeset publish",
     "prepublishOnly": "npm run ci"
@@ -41,6 +42,7 @@
     "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.27.7",
     "@types/sentiment": "^5.0.4",
+    "@vitest/coverage-v8": "^2.1.1",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.24.2",
     "prettier": "^3.3.3",
@@ -48,6 +50,7 @@
     "vitest": "^2.0.5"
   },
   "dependencies": {
+    "@ai-sdk/google": "^0.0.51",
     "@ai-sdk/openai": "^0.0.58",
     "@neondatabase/serverless": "^0.9.4",
     "ai": "^3.3.28",

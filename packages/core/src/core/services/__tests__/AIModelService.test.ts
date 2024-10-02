@@ -92,7 +92,7 @@ describe('AIModelService', () => {
   });
 
   it('should throw an error when reading a non-existent AIResponse', async () => {
-    const responseId = 999; // ID que no existe
+    const responseId = 999; //Not existing response id
 
     await expect(service.readAIResponse(responseId)).rejects.toThrow(
       'Response not found',

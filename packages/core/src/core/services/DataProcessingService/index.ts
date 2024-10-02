@@ -17,35 +17,49 @@ export class DataProcessingService {
       throw new Error('NEON_URL is not defined.');
     }
     this.featureDataLoader = new FeatureDataLoader(NEON_URL);
-    this.confusionMatrixGenerator = new ConfusionMatrixGenerator();
     this.databaseOperations = new DatabaseOperations(NEON_URL);
     this.metricsCalculator = new MetricsCalculator();
+    this.confusionMatrixGenerator = new ConfusionMatrixGenerator(); // Inicialización por defecto
   }
 
-  async processFeature(featureId: number, progressCallback?: ProgressCallback) {
-    const emitProgress = (stage: string, progress: number) => {
+  async processFeature(
+    featureId: number,
+    progressCallback?: ProgressCallback,
+    debug: boolean = false,
+  ) {
+    const emitProgress: ProgressCallback = (data) => {
       if (progressCallback) {
-        progressCallback({ stage, progress });
+        progressCallback(data);
       }
     };
 
-    emitProgress('starting the calculation', 0);
+    emitProgress({ stage: 'starting the calculation', progress: 0 });
 
     const feature = await this.featureDataLoader.getFeatureData(featureId);
-    emitProgress(
-      'Feature data loaded, starting confusion matrix generation',
-      20,
-    );
+    emitProgress({
+      stage: 'Feature data loaded, starting confusion matrix generation',
+      progress: 20,
+    });
 
+    this.confusionMatrixGenerator = new ConfusionMatrixGenerator(
+      debug,
+      emitProgress,
+    );
     const confusionMatrixResult: ConfusionMatrixResult =
       await this.confusionMatrixGenerator.generateConfusionMatrix(feature);
-    emitProgress('Confusion matrix generated, saving to database', 60);
+    emitProgress({
+      stage: 'Confusion matrix generated, saving to database',
+      progress: 60,
+    });
 
     const savedConfusionMatrix =
       await this.databaseOperations.saveConfusionMatrix(
         confusionMatrixResult.confusionMatrix,
       );
-    emitProgress('Confusion matrix saved, calculating metrics', 70);
+    emitProgress({
+      stage: 'Confusion matrix saved, calculating metrics',
+      progress: 70,
+    });
 
     if (
       !confusionMatrixResult.generatedTexts ||
@@ -59,12 +73,15 @@ export class DataProcessingService {
       generatedTexts: confusionMatrixResult.generatedTexts,
       expectedTexts: confusionMatrixResult.expectedTexts,
     });
-    emitProgress('Metrics calculated, saving to database', 90);
+    emitProgress({
+      stage: 'Metrics calculated, saving to database',
+      progress: 90,
+    });
 
     console.log('Metrics Result:', metrics);
 
     await this.databaseOperations.saveMetrics(featureId, metrics);
-    emitProgress('Calculation complete', 100);
+    emitProgress({ stage: 'Calculation complete', progress: 100 });
 
     return { confusionMatrix: savedConfusionMatrix, metrics };
   }
