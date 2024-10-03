@@ -117,7 +117,7 @@ async function generatePartialConfusionMatrix(
     }),
   );
 
-  const systemMessage = `Eres un asistente especializado en generar matrices de confusión basadas en respuestas generadas y casos de uso. Analiza las respuestas generadas para la característica "${feature.description}" y genera una matriz de confusión para cada combinación de prompt y caso de uso. La matriz debe incluir truePositives, falsePositives, trueNegatives, y falseNegatives. Asegúrate de incluir el promptId, useCaseId y featureId en cada elemento de la matriz.`;
+  const systemMessage = `Eres un asistente especializado en generar matrices de confusión basadas en respuestas generadas y casos de uso. Analiza las respuestas generadas para la característica "${feature.description}" y genera una matriz de confusión para cada combinación de prompt y caso de uso. La matriz debe incluir truePositives, falsePositives, trueNegatives, y falseNegatives. Es crucial que para cada matriz, exactamente un valor sea 1 y los otros tres sean 0. Asegúrate de incluir el promptId, useCaseId y featureId en cada elemento de la matriz.`;
 
   const promptsMap = new Map<number, string>();
   cases.forEach((c) => {
@@ -151,7 +151,12 @@ Clase de respuesta esperada: ${expectedResponseClass?.description}
 Respuesta generada: ${c.generatedResponse}`;
   });
 
-  messages.push({ role: 'user', content: userMessages.join('\n\n') });
+  messages.push({
+    role: 'user',
+    content:
+      userMessages.join('\n\n') +
+      '\n\nRecuerda: En cada matriz de confusión, SOLO UN valor debe ser 1 y los otros tres DEBEN ser 0.',
+  });
 
   log(`Generando matriz de confusión para ${cases.length} casos`);
   log('Mensajes:', JSON.stringify(messages, null, 2));

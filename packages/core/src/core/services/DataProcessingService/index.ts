@@ -1,5 +1,6 @@
 import { FeatureDataLoader } from './FeatureDataLoader.js';
-import { ConfusionMatrixGenerator } from './ConfusionMatrixGenerator.js';
+//import { ConfusionMatrixGenerator } from './ConfusionMatrixGenerator.js';
+import { ConfusionMatrixGenerator } from './ConfusionMatrix/index.js';
 import { DatabaseOperations } from './DatabaseOperations.js';
 import { MetricsCalculator } from './MetricsCalculator.js';
 import type { ConfusionMatrixResult } from '../../../shared/models/ConfusionMatrix.js';
