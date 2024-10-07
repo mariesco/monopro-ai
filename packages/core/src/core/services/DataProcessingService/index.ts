@@ -1,10 +1,14 @@
 import { FeatureDataLoader } from './FeatureDataLoader.js';
-import { ConfusionMatrixGenerator } from './ConfusionMatrixGenerator.js';
+import { ConfusionMatrixGenerator } from './ConfusionMatrix/index.js';
 import { DatabaseOperations } from './DatabaseOperations.js';
 import { MetricsCalculator } from './MetricsCalculator.js';
 import type { ConfusionMatrixResult } from '../../../shared/models/ConfusionMatrix.js';
-
-type ProgressCallback = (data: { stage: string; progress: number }) => void;
+import type { DataProcessingProgressCallback } from './ConfusionMatrix/utils/DataProcessingCallback.js';
+import {
+  getLoadingMetrics,
+  type MetricForEmitProgress,
+  type UseCaseForEmitProgress,
+} from './ConfusionMatrix/types/DataProcessingTypes.js';
 
 export class DataProcessingService {
   private featureDataLoader: FeatureDataLoader;
@@ -13,43 +17,82 @@ export class DataProcessingService {
   private metricsCalculator: MetricsCalculator;
 
   constructor(NEON_URL: string) {
-    if (!NEON_URL) {
-      throw new Error('NEON_URL is not defined.');
-    }
+    this.validateEnvVariables();
+
     this.featureDataLoader = new FeatureDataLoader(NEON_URL);
     this.databaseOperations = new DatabaseOperations(NEON_URL);
     this.metricsCalculator = new MetricsCalculator();
     this.confusionMatrixGenerator = new ConfusionMatrixGenerator(); // Inicialización por defecto
   }
 
+  private validateEnvVariables() {
+    const requiredVars = [
+      'NEON_URL',
+      'GOOGLE_API_KEY',
+      'OPENAI_API_KEY',
+      'GROQ_API_KEY',
+    ];
+
+    const missingVars = requiredVars.filter((varName) => !process.env[varName]);
+
+    if (missingVars.length > 0) {
+      throw new Error(
+        `Faltan las siguientes variables de entorno: ${missingVars.join(', ')}`,
+      );
+    }
+  }
+
   async processFeature(
     featureId: number,
-    progressCallback?: ProgressCallback,
+    progressCallback?: DataProcessingProgressCallback,
     debug: boolean = false,
   ) {
-    const emitProgress: ProgressCallback = (data) => {
+    let processedUseCases: UseCaseForEmitProgress[] = [];
+
+    const emitProgress: DataProcessingProgressCallback = (data) => {
       if (progressCallback) {
         progressCallback(data);
       }
     };
 
-    emitProgress({ stage: 'starting the calculation', progress: 0 });
+    emitProgress({
+      stage: 'starting the calculation',
+      progress: 0,
+      useCasesToProcess: 0,
+      data: {
+        useCases: [],
+        metrics: getLoadingMetrics(),
+      },
+    });
 
     const feature = await this.featureDataLoader.getFeatureData(featureId);
     emitProgress({
       stage: 'Feature data loaded, starting confusion matrix generation',
       progress: 20,
+      useCasesToProcess: feature.useCases.length,
+      data: {
+        useCases: [],
+        metrics: getLoadingMetrics(),
+      },
     });
 
     this.confusionMatrixGenerator = new ConfusionMatrixGenerator(
       debug,
-      emitProgress,
+      (data) => {
+        processedUseCases = data.data.useCases;
+        emitProgress(data);
+      },
     );
     const confusionMatrixResult: ConfusionMatrixResult =
       await this.confusionMatrixGenerator.generateConfusionMatrix(feature);
     emitProgress({
       stage: 'Confusion matrix generated, saving to database',
       progress: 60,
+      useCasesToProcess: processedUseCases.length,
+      data: {
+        useCases: processedUseCases,
+        metrics: getLoadingMetrics(),
+      },
     });
 
     const savedConfusionMatrix =
@@ -59,6 +102,11 @@ export class DataProcessingService {
     emitProgress({
       stage: 'Confusion matrix saved, calculating metrics',
       progress: 70,
+      useCasesToProcess: processedUseCases.length,
+      data: {
+        useCases: processedUseCases,
+        metrics: getLoadingMetrics(),
+      },
     });
 
     if (
@@ -73,15 +121,36 @@ export class DataProcessingService {
       generatedTexts: confusionMatrixResult.generatedTexts,
       expectedTexts: confusionMatrixResult.expectedTexts,
     });
+    const metricsForEmitProgress: MetricForEmitProgress[] = metrics.map(
+      (metric) => ({
+        name: metric.name!,
+        value: metric.value!,
+        type: metric.type!,
+      }),
+    );
+
     emitProgress({
       stage: 'Metrics calculated, saving to database',
       progress: 90,
+      useCasesToProcess: processedUseCases.length,
+      data: {
+        useCases: processedUseCases,
+        metrics: metricsForEmitProgress,
+      },
     });
 
     console.log('Metrics Result:', metrics);
 
     await this.databaseOperations.saveMetrics(featureId, metrics);
-    emitProgress({ stage: 'Calculation complete', progress: 100 });
+    emitProgress({
+      stage: 'Calculation complete',
+      progress: 100,
+      useCasesToProcess: processedUseCases.length,
+      data: {
+        useCases: processedUseCases,
+        metrics: metricsForEmitProgress,
+      },
+    });
 
     return { confusionMatrix: savedConfusionMatrix, metrics };
   }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DataProcessingService } from '../../DataProcessingService/index.js';
 import { FeatureDataLoader } from '../../DataProcessingService/FeatureDataLoader.js';
-import { ConfusionMatrixGenerator } from '../../DataProcessingService/ConfusionMatrixGenerator.js';
+import { ConfusionMatrixGenerator } from '../../DataProcessingService/ConfusionMatrix/index.js';
 import { DatabaseOperations } from '../../DataProcessingService/DatabaseOperations.js';
 import { MetricsCalculator } from '../../DataProcessingService/MetricsCalculator.js';
 
