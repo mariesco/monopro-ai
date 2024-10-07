@@ -1,5 +1,6 @@
 import type { ConfusionMatrixResult } from '../../../../shared/models/ConfusionMatrix.js';
 import type { Feature } from '../../../../shared/models/Feature.js';
+import type { DataProcessingProgressCallback } from './utils/DataProcessingCallback.js';
 import { SingleModelMatrixGenerator } from './generators/SingleModelMatrixGenerator.js';
 
 export class ConfusionMatrixGenerator {
@@ -7,10 +8,7 @@ export class ConfusionMatrixGenerator {
 
   constructor(
     debug: boolean = false,
-    emitProgress: (data: {
-      stage: string;
-      progress: number;
-    }) => void = () => {},
+    emitProgress: DataProcessingProgressCallback = () => {},
   ) {
     this.generator = new SingleModelMatrixGenerator({ debug, emitProgress });
   }

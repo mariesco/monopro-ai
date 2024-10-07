@@ -8,6 +8,10 @@ import { z } from 'zod';
 import type { ConfusionMatrixResult } from '../../../../../shared/models/ConfusionMatrix.js';
 import { generateObject } from 'ai';
 import { buildSingleResponseGenerationPrompt } from '../utils/buildPromptUtils.js';
+import {
+  getLoadingMetrics,
+  type UseCaseForEmitProgress,
+} from '../types/DataProcessingTypes.js';
 
 export class SingleModelMatrixGenerator extends BaseMatrixGenerator {
   private workerManager: WorkerManager;
@@ -30,9 +34,14 @@ export class SingleModelMatrixGenerator extends BaseMatrixGenerator {
 
     const startTime = Date.now();
     this.queueManager.initializeQueue(feature);
-    this.workerManager.startWorker(process.env.GOOGLE_API_KEY!, feature);
-
     const queueSize = this.queueManager.size();
+
+    this.workerManager.startWorker(
+      process.env.GOOGLE_API_KEY!,
+      feature,
+      queueSize,
+    );
+
     this.log(
       '---Cola inicializada. Número de casos de uso en cola:',
       queueSize,
@@ -96,6 +105,7 @@ export class SingleModelMatrixGenerator extends BaseMatrixGenerator {
 
     const totalCases = this.queueManager.size();
     let processedCount = 0;
+    let processedUseCases: UseCaseForEmitProgress[] = [];
 
     while (!this.queueManager.isEmpty()) {
       const useCase = this.queueManager.dequeue();
@@ -118,10 +128,23 @@ export class SingleModelMatrixGenerator extends BaseMatrixGenerator {
           `---Respuesta generada exitosamente para el caso de uso ${processedCount + 1}`,
         );
         processedCount++;
+
+        processedUseCases.push({
+          id: useCase.useCaseId,
+          name: `Caso de uso ${useCase.useCaseId}`,
+          description: useCase.caseDescription,
+          generatedResponse: result.value.generatedResponse,
+        });
+
         const progress = (processedCount / totalCases) * 100;
         this.emitProgress({
-          stage: 'Procesando casos de uso',
+          stage: 'Processing use cases',
           progress: Math.min(Math.round(progress * 100) / 100, 100),
+          useCasesToProcess: totalCases,
+          data: {
+            useCases: processedUseCases,
+            metrics: getLoadingMetrics(),
+          },
         });
       } else {
         console.error(

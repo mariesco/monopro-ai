@@ -1,5 +1,6 @@
 import type { ConfusionMatrixResult } from '../../../../../shared/models/ConfusionMatrix.js';
 import type { Feature } from '../../../../../shared/models/Feature.js';
+import type { DataProcessingProgressCallback } from '../utils/DataProcessingCallback.js';
 import type {
   MatrixGeneratorOptions,
   MatrixGeneratorInterface,
@@ -7,7 +8,7 @@ import type {
 
 export abstract class BaseMatrixGenerator implements MatrixGeneratorInterface {
   protected debug: boolean;
-  protected emitProgress: (data: { stage: string; progress: number }) => void;
+  protected emitProgress: DataProcessingProgressCallback;
 
   constructor(options: MatrixGeneratorOptions) {
     this.debug = options.debug;
