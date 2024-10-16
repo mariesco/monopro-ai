@@ -132,4 +132,37 @@ describe('AIModelService', () => {
 
     consoleWarnSpy.mockRestore();
   });
+
+  it('should delete a prompt without associated responses', async () => {
+    // Crear un nuevo prompt sin respuestas asociadas
+    const promptData = 'Prompt to delete';
+    const newPrompt = await service.saveAIPrompt(promptData, featureId);
+
+    const result = await service.deleteAIPrompt(newPrompt.id);
+    expect(result).toEqual({
+      success: true,
+      message: 'The prompt was deleted correctly.',
+    });
+  });
+
+  it('should not delete a prompt with associated responses', async () => {
+    const promptData = 'Prompt with response';
+    const prompt = await service.saveAIPrompt(promptData, featureId);
+    await service.saveAIResponse('Associated response', prompt.id);
+
+    const result = await service.deleteAIPrompt(prompt.id);
+    expect(result).toEqual({
+      success: false,
+      message: 'Cannot delete the prompt because it has associated responses.',
+    });
+  });
+
+  it('should handle attempt to delete a non-existent prompt', async () => {
+    const nonExistentPromptId = 99999;
+    const result = await service.deleteAIPrompt(nonExistentPromptId);
+    expect(result).toEqual({
+      success: false,
+      message: 'The prompt specified was not found.',
+    });
+  });
 });

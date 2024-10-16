@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { ResponseClassService } from '../ResponseClassService.js';
 import { FeatureService } from '../FeatureService.js';
+import { UseCaseService } from '../UseCaseService.js';
+import { AIModelService } from '../AIModelService.js';
 
 describe('ResponseClassService', () => {
   let responseClassService: ResponseClassService;
   let featureService: FeatureService;
+  let useCaseService: UseCaseService;
+  let aiModelService: AIModelService;
   let featureId: number;
   let responseClassId: number;
   const NEON_URL = process.env.NEON_TEST_URL!;
@@ -12,6 +16,8 @@ describe('ResponseClassService', () => {
   beforeAll(async () => {
     responseClassService = new ResponseClassService(NEON_URL);
     featureService = new FeatureService(NEON_URL);
+    useCaseService = new UseCaseService(NEON_URL);
+    aiModelService = new AIModelService(NEON_URL);
 
     const feature = await featureService.createFeature({
       name: 'Test Feature for ResponseClass',
@@ -121,5 +127,60 @@ describe('ResponseClassService', () => {
     await expect(
       responseClassService.deleteResponseClass(9999),
     ).resolves.not.toThrow();
+  });
+
+  it('should throw a custom error when deleting a response class with associated use cases', async () => {
+    const responseClassData = {
+      name: 'Test Response Class for Deletion',
+      description: 'This class will have associated use cases',
+      featureId: featureId,
+    };
+    const responseClass =
+      await responseClassService.createResponseClass(responseClassData);
+
+    // Crear un prompt válido
+    const promptContent = 'Test Prompt Content';
+    const { promptId } = await aiModelService.saveAIInteraction(
+      promptContent,
+      undefined,
+      featureId,
+    );
+
+    if (!promptId) {
+      throw new Error('Failed to create prompt');
+    }
+
+    const useCaseData = {
+      name: 'Associated Use Case',
+      caseDescription: 'This use case is associated with the response class',
+      featureId: featureId,
+      promptId: promptId,
+      responseClassExpectedId: responseClass.id,
+    };
+    await useCaseService.createUseCase(useCaseData);
+
+    try {
+      await responseClassService.deleteResponseClass(responseClass.id);
+      expect(true).toBe(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        const errorMessages = JSON.parse(error.message);
+        expect(errorMessages).toHaveProperty('es');
+        expect(errorMessages).toHaveProperty('pt');
+        expect(errorMessages).toHaveProperty('en');
+        expect(errorMessages.es).toContain(
+          'No se puede eliminar la clase de respuesta',
+        );
+        expect(errorMessages.pt).toContain(
+          'Não é possível excluir a classe de resposta',
+        );
+        expect(errorMessages.en).toContain('Cannot delete the response class');
+        expect(errorMessages.es).toContain('Associated Use Case');
+        expect(errorMessages.pt).toContain('Associated Use Case');
+        expect(errorMessages.en).toContain('Associated Use Case');
+      } else {
+        expect(true).toBe(false);
+      }
+    }
   });
 });

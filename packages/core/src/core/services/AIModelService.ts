@@ -201,4 +201,46 @@ export class AIModelService {
 
     return result;
   }
+
+  async deleteAIPrompt(
+    promptId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const associatedResponses = await this.db
+        .select({ id: AIResponseTable.id })
+        .from(AIResponseTable)
+        .where(eq(AIResponseTable.promptId, promptId))
+        .limit(1);
+
+      if (associatedResponses.length > 0) {
+        return {
+          success: false,
+          message:
+            'Cannot delete the prompt because it has associated responses.',
+        };
+      }
+
+      const result = await this.db
+        .delete(AIPromptTable)
+        .where(eq(AIPromptTable.id, promptId));
+
+      if (result.rowCount > 0) {
+        return {
+          success: true,
+          message: 'The prompt was deleted correctly.',
+        };
+      } else {
+        return {
+          success: false,
+          message: 'The prompt specified was not found.',
+        };
+      }
+    } catch (error) {
+      console.error('Error al intentar eliminar el prompt:', error);
+      return {
+        success: false,
+        message: 'An error occurred while trying to delete the prompt.',
+      };
+    }
+  }
 }
