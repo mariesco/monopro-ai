@@ -1,5 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { ResponseClassTable } from '../../shared/models/drizzle_schema.js';
+import {
+  ResponseClassTable,
+  UseCaseTable,
+} from '../../shared/models/drizzle_schema.js';
 import {
   insertResponseClassSchema,
   selectResponseClassSchema,
@@ -61,8 +64,29 @@ export class ResponseClassService {
   }
 
   async deleteResponseClass(id: number): Promise<void> {
-    await this.db
-      .delete(ResponseClassTable)
-      .where(eq(ResponseClassTable.id, id));
+    try {
+      await this.db
+        .delete(ResponseClassTable)
+        .where(eq(ResponseClassTable.id, id));
+    } catch (error) {
+      const relatedUseCases = await this.db
+        .select({
+          id: UseCaseTable.id,
+          name: UseCaseTable.name,
+        })
+        .from(UseCaseTable)
+        .where(eq(UseCaseTable.responseClassExpectedId, id));
+
+      const count = relatedUseCases.length;
+      const names = relatedUseCases.map((uc) => uc.name).join(', ');
+
+      const errorMessages = {
+        es: `No se puede eliminar la clase de respuesta porque está asociada a ${count} caso(s) de uso: ${names}.`,
+        pt: `Não é possível excluir a classe de resposta porque está associada a ${count} caso(s) de uso: ${names}.`,
+        en: `Cannot delete the response class because it is associated with ${count} use case(s): ${names}.`,
+      };
+
+      throw new Error(JSON.stringify(errorMessages));
+    }
   }
 }

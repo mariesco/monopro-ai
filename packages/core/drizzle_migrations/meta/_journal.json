@@ -36,6 +36,20 @@
       "when": 1728910199132,
       "tag": "0004_red_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1728928392979,
+      "tag": "0005_clumsy_warhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1728935383456,
+      "tag": "0006_safe_scorpion",
+      "breakpoints": true
     }
   ]
 }

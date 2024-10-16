@@ -110,9 +110,6 @@ export const AIModelTable = pgTable('ai_models', {
 
 export const AIModelConfigTable = pgTable('ai_model_configs', {
   id: serial('id').primaryKey(),
-  modelId: integer('model_id')
-    .notNull()
-    .references((): AnyPgColumn => AIModelTable.id),
   maxTokens: integer('max_tokens'),
   temperature: real('temperature'),
   topP: real('top_p'),
@@ -133,9 +130,7 @@ export const AIModelBranchTable = pgTable('ai_model_branches', {
   configId: integer('config_id')
     .notNull()
     .references((): AnyPgColumn => AIModelConfigTable.id),
-  isProduction: boolean('is_production').notNull().default(false),
-  featureId: integer('feature_id')
-    .references((): AnyPgColumn => FeatureTable.id),
+  organizationId: varchar('organization_id').notNull().default('1'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -152,4 +147,16 @@ export const AIModelPullRequestTable = pgTable('ai_model_pull_requests', {
   status: varchar('status', { length: 50 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const FeatureModelBranchTable = pgTable('rel_feature_model_branches', {
+  id: serial('id').primaryKey(),
+  featureId: integer('feature_id')
+    .notNull()
+    .references((): AnyPgColumn => FeatureTable.id),
+  modelBranchId: integer('model_branch_id')
+    .notNull()
+    .references((): AnyPgColumn => AIModelBranchTable.id),
+  isProduction: boolean('is_production').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });

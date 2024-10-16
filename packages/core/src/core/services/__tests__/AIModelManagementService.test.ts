@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { AIModelManagementService } from '../AIModelManagementService.js';
-import type { InsertAIProvider, InsertAIModel, InsertAIModelConfig, InsertAIModelBranch, InsertAIModelPullRequest } from '../../../shared/models/AIModelManagement.js';
+import type {
+  InsertAIProvider,
+  InsertAIModel,
+  InsertAIModelConfig,
+  InsertAIModelBranch,
+  InsertAIModelPullRequest,
+  GetModelBranch,
+} from '../../../shared/models/AIModelManagement.js';
 
 describe('AIModelManagementService', () => {
   let aiModelManagementService: AIModelManagementService;
@@ -59,7 +66,10 @@ describe('AIModelManagementService', () => {
     const updateData: Partial<InsertAIModel> = {
       description: 'Updated Test Model Description',
     };
-    const result = await aiModelManagementService.updateModel(modelId, updateData);
+    const result = await aiModelManagementService.updateModel(
+      modelId,
+      updateData,
+    );
 
     expect(result.description).toBe(updateData.description);
   });
@@ -73,7 +83,6 @@ describe('AIModelManagementService', () => {
 
   it('should create a model config successfully', async () => {
     const configData: InsertAIModelConfig = {
-      modelId,
       maxTokens: 100,
       temperature: 0.7,
       topP: 0.9,
@@ -92,21 +101,48 @@ describe('AIModelManagementService', () => {
     const branchData: InsertAIModelBranch = {
       name: 'Test Branch',
       modelId,
-      configId,
-      isProduction: false,
+      organizationId: '1',
+      maxTokens: 100,
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 50,
+      presencePenalty: 0.5,
+      frequencyPenalty: 0.5,
+      stopSequences: ['stop1', 'stop2'],
+      seed: 42,
     };
     const result = await aiModelManagementService.createModelBranch(branchData);
     branchId = result.id;
 
-    expect(result).toMatchObject(branchData);
+    expect(result).toMatchObject({
+      name: branchData.name,
+      modelId: branchData.modelId,
+      organizationId: branchData.organizationId,
+    });
     expect(result.id).toBeDefined();
+    expect(result.configId).toBeDefined();
   });
 
-  it('should get model branches', async () => {
-    const result = await aiModelManagementService.getModelBranches(modelId);
+  it('should get model branches with their configurations and related features', async () => {
+    const result = await aiModelManagementService.getModelBranches('1');
 
     expect(result).toBeInstanceOf(Array);
     expect(result.length).toBeGreaterThan(0);
+
+    const branch = result[0] as GetModelBranch;
+    expect(branch).toHaveProperty('id');
+    expect(branch).toHaveProperty('name');
+    expect(branch).toHaveProperty('modelId');
+    expect(branch).toHaveProperty('configId');
+    expect(branch).toHaveProperty('organizationId');
+    expect(branch).toHaveProperty('config');
+    expect(branch.config).toHaveProperty('maxTokens');
+    expect(branch.config).toHaveProperty('temperature');
+    expect(branch.config).toHaveProperty('topP');
+    expect(branch).toHaveProperty('relatedFeatures');
+    expect(Array.isArray(branch.relatedFeatures)).toBe(true);
+    expect(branch).toHaveProperty('isProductionForAnyFeature');
+    expect(typeof branch.isProductionForAnyFeature).toBe('boolean');
   });
 
   it('should create a pull request successfully', async () => {
@@ -117,7 +153,8 @@ describe('AIModelManagementService', () => {
       targetBranchId: branchId, // Using the same branch for simplicity
       status: 'open',
     };
-    const result = await aiModelManagementService.createPullRequest(pullRequestData);
+    const result =
+      await aiModelManagementService.createPullRequest(pullRequestData);
     pullRequestId = result.id;
 
     expect(result).toMatchObject(pullRequestData);
@@ -132,13 +169,19 @@ describe('AIModelManagementService', () => {
   });
 
   it('should update pull request status', async () => {
-    const result = await aiModelManagementService.updatePullRequestStatus(pullRequestId, 'closed');
+    const result = await aiModelManagementService.updatePullRequestStatus(
+      pullRequestId,
+      'closed',
+    );
 
     expect(result.status).toBe('closed');
   });
 
   it('should compare branches', async () => {
-    const result = await aiModelManagementService.compareBranches(branchId, branchId); // Using the same branch for simplicity
+    const result = await aiModelManagementService.compareBranches(
+      branchId,
+      branchId,
+    ); // Using the same branch for simplicity
 
     expect(result).toHaveProperty('branch1');
     expect(result).toHaveProperty('branch2');
@@ -149,7 +192,18 @@ describe('AIModelManagementService', () => {
   it('should delete a model branch', async () => {
     await aiModelManagementService.deleteModelBranch(branchId);
 
-    const branches = await aiModelManagementService.getModelBranches(modelId);
-    expect(branches.find(b => b.id === branchId)).toBeUndefined();
+    const branches = await aiModelManagementService.getModelBranches('1');
+    expect(branches.find((b) => b.id === branchId)).toBeUndefined();
   });
+
+  //it('should associate a model branch with a feature', async () => {
+  //  const featureId = 1; // Asume que tienes un feature con este ID
+  //  await aiModelManagementService.associateModelBranchWithFeature(featureId, branchId, true);
+  //
+  //  const branchesForFeature = await aiModelManagementService.getModelBranchesForFeature(featureId);
+  //  expect(branchesForFeature).toBeInstanceOf(Array);
+  //  expect(branchesForFeature.length).toBeGreaterThan(0);
+  //  expect(branchesForFeature[0]!.id).toBe(branchId);
+  //  expect(branchesForFeature[0]!.isProductionForAnyFeature).toBe(true);
+  //});
 });

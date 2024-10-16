@@ -1,6 +1,6 @@
 {
-  "id": "18bc9697-4a08-4935-a757-c81adf09e255",
-  "prevId": "f021465f-06d3-499a-a49e-d804f46fa9dd",
+  "id": "e478a75e-762d-43a2-acc4-0cde4507139b",
+  "prevId": "d6785d01-2027-4e07-ad1b-c4498309c1d5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -32,18 +32,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_production": {
-          "name": "is_production",
-          "type": "boolean",
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": false
-        },
-        "feature_id": {
-          "name": "feature_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
+          "default": "'1'"
         },
         "created_at": {
           "name": "created_at",
@@ -72,15 +66,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "ai_model_branches_feature_id_features_id_fk": {
-          "name": "ai_model_branches_feature_id_features_id_fk",
-          "tableFrom": "ai_model_branches",
-          "tableTo": "features",
-          "columnsFrom": ["feature_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -94,12 +79,6 @@
           "name": "id",
           "type": "serial",
           "primaryKey": true,
-          "notNull": true
-        },
-        "model_id": {
-          "name": "model_id",
-          "type": "integer",
-          "primaryKey": false,
           "notNull": true
         },
         "max_tokens": {
@@ -159,17 +138,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "ai_model_configs_model_id_ai_models_id_fk": {
-          "name": "ai_model_configs_model_id_ai_models_id_fk",
-          "tableFrom": "ai_model_configs",
-          "tableTo": "ai_models",
-          "columnsFrom": ["model_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -536,6 +505,67 @@
           "tableFrom": "confusion_matrix",
           "tableTo": "use_cases",
           "columnsFrom": ["use_case_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.rel_feature_model_branches": {
+      "name": "rel_feature_model_branches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "feature_id": {
+          "name": "feature_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_branch_id": {
+          "name": "model_branch_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_production": {
+          "name": "is_production",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rel_feature_model_branches_feature_id_features_id_fk": {
+          "name": "rel_feature_model_branches_feature_id_features_id_fk",
+          "tableFrom": "rel_feature_model_branches",
+          "tableTo": "features",
+          "columnsFrom": ["feature_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rel_feature_model_branches_model_branch_id_ai_model_branches_id_fk": {
+          "name": "rel_feature_model_branches_model_branch_id_ai_model_branches_id_fk",
+          "tableFrom": "rel_feature_model_branches",
+          "tableTo": "ai_model_branches",
+          "columnsFrom": ["model_branch_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
